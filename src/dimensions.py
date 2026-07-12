@@ -1,0 +1,62 @@
+"""Superglue cap — all shared constants (one source of truth).
+
+Replacement dispenser tip + cap for a superglue bottle. The bottle's neck
+thread was measured by hand (calipers, 2026-07-12):
+
+  * thread OD (male major)  Ø13.0
+  * thread pitch            2.0 mm crest-to-crest
+  * thread depth            ~1.0 mm  (=> male minor ~Ø11)
+  * SINGLE start, ~2 turns  (confirmed by eye: one ridge end at the rim)
+
+A symmetric 45° FDM thread (cadkit.threads) is geometrically impossible at
+this pitch/depth combo — two 45° flanks × 1 mm depth consume the whole 2 mm
+pitch, and cadkit's cutter additionally needs depth < pitch/2 − 0.6 (valley
+overshoot) ≈ 0.4 mm, which would leave ~0.15 mm of engagement. So the female
+socket uses a project-local ASYMMETRIC (buttress-style) profile instead, in
+src/thread_socket.py:
+
+  * ridge UNDERSIDE at 45°  — the only down-facing surface, self-supporting
+    when the part prints with its mouth on the bed (axis vertical);
+  * ridge TOP at 15° from horizontal — an up-facing surface, so it carries
+    no overhang constraint and frees the axial room the 45° profile lacks;
+  * ridge tip shortened to ~0.5 mm radial engagement (the bottle's V-thread
+    root is never reached; flank/crest contact does the holding, plenty for
+    a cap).
+
+Printer: Bambu, 0.4 mm nozzle (0.2 available if the fit needs it), axis
+vertical, no supports.
+"""
+
+# ── Bottle neck (male thread, measured) ──────────────────────────────────────
+BOTTLE_MAJOR_D = 13.0    # male thread crest Ø
+BOTTLE_MINOR_D = 11.0    # male thread root Ø (major − 2 × measured depth)
+BOTTLE_PITCH   = 2.0     # axial crest-to-crest, single start
+BOTTLE_TURNS   = 2.0     # engagement length ≈ 4 mm of thread on the neck
+
+# ── Female socket thread (printed, asymmetric profile) ──────────────────────
+# Clearances are DIAMETRAL and deliberately on the printed (female) side —
+# the male is a manufactured bottle neck we can't change. Print-tested values
+# go in the table in cadkit/THREADS_README.md once the coupon verdict is in.
+SOCKET_CREST_CLR   = 0.4                 # bore wall Ø over male crest (0.2/side)
+SOCKET_BORE_D      = BOTTLE_MAJOR_D + SOCKET_CREST_CLR    # 13.4 — groove-root bore
+SOCKET_RIDGE_TIP_D = 12.0                # female ridge tip Ø → 0.5 mm radial bite
+                                         # into the male flank, 0.5 mm clear of
+                                         # the male root (Ø11)
+RIDGE_TIP_FLAT     = 0.4                 # axial flat on the ridge tip (≥ 1 extrusion)
+RIDGE_TOP_SLOPE_DEG = 15.0               # up-facing top flank, from horizontal
+SOCKET_ENTRY_LEAD  = 1.2                 # smooth bore below the first ridge
+                                         # (clears elephant's foot, starts square)
+SOCKET_MOUTH_CHAMFER = 0.8               # conical flare at the mouth (easy start)
+
+# ── Thread-fit coupon (test_bottle_socket.step) ──────────────────────────────
+COUPON_WALL = 2.6                        # ≥ 6 perimeters at 0.4 nozzle behind the thread
+COUPON_OD   = SOCKET_BORE_D + 2 * COUPON_WALL   # 18.6
+COUPON_H    = SOCKET_ENTRY_LEAD + BOTTLE_TURNS * BOTTLE_PITCH + 0.8   # 6.0 — open tube
+
+# ── Assembly viz ─────────────────────────────────────────────────────────────
+COUNTER_Z = 30.0                         # build number float height
+
+# ── Invariants ───────────────────────────────────────────────────────────────
+assert SOCKET_RIDGE_TIP_D > BOTTLE_MINOR_D, "ridge tip must clear the male root"
+assert SOCKET_RIDGE_TIP_D < BOTTLE_MAJOR_D, "ridge must actually engage the male flank"
+assert SOCKET_BORE_D > BOTTLE_MAJOR_D, "bore must clear the male crest"
