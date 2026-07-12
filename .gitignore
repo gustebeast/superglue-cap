@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.vscode/
+
+# Per-machine build counter (drives the floating "build #N" model) — bumped
+# every build, so don't track it.
+tools/build_counter.txt
