@@ -65,6 +65,12 @@ COUPON_H    = SOCKET_ENTRY_LEAD + BOTTLE_TURNS * BOTTLE_PITCH + 0.8   # 6.0 — 
 CAP_SOCKET_DEPTH = 11.5                  # interior vertical-wall depth (old cap)
 CAP_OD           = SOCKET_BORE_D + 2 * SOCKET_WALL   # 20.5
 CAP_TOP_FLAT_D   = 3.0                   # truncated cone tip flat
+# Threads run the WHOLE vertical wall (like the old cap), not just the
+# bottle's 2 measured turns: as many WHOLE turns as fit above the entry lead
+# (sweep height must be whole turns — a partial turn wipes the part).
+# 11.5 − 1.2 = 10.3 → 5 turns, thread top at 11.2, 0.3 under the ceiling.
+CAP_SOCKET_TURNS = int((CAP_SOCKET_DEPTH - SOCKET_ENTRY_LEAD) // BOTTLE_PITCH)  # 5
+assert SOCKET_ENTRY_LEAD + CAP_SOCKET_TURNS * BOTTLE_PITCH < CAP_SOCKET_DEPTH
 
 # ── Assembly viz ─────────────────────────────────────────────────────────────
 COUNTER_Z = 30.0                         # build number float height

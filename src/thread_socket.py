@@ -51,7 +51,7 @@ def _cone(d_bottom, d_top, h, z):
             .workplane(offset=h).circle(d_top / 2.0).loft())
 
 
-def _valley_sweep(z0):
+def _valley_sweep(z0, turns=BOTTLE_TURNS):
     """The helical valley cutter (ONE whole-turn-height segment), base at z0.
 
     Cut from the crest-Ø blank, the valley becomes the female RIDGE. Quad in
@@ -77,7 +77,8 @@ def _valley_sweep(z0):
             (r_os, f / 2.0 + d_os * top_rise),    # 15° top flank
             (r_tip, f / 2.0)]
 
-    h = math.ceil(BOTTLE_TURNS - 1e-6) * BOTTLE_PITCH     # WHOLE turns
+    h = math.ceil(turns - 1e-6) * BOTTLE_PITCH            # WHOLE turns
+    assert h <= 72.0, "tile in segments past ~72mm (see thread_segments)"
     r_mid = (r_tip + SOCKET_BORE_D / 2.0) / 2.0
     sweep = (cq.Workplane("XZ").polyline(gpts).close()
              .sweep(cq.Workplane("XY").add(
@@ -86,10 +87,11 @@ def _valley_sweep(z0):
     return sweep.translate((0, 0, z0))
 
 
-def socket_cutter(total_len, over_hi=_END_OVER, cone_ceiling=False):
+def socket_cutter(total_len, over_hi=_END_OVER, cone_ceiling=False,
+                  turns=BOTTLE_TURNS):
     """The complete socket cutter for a body whose mouth face is at z=0 and
     which extends up to z=total_len: flared mouth + smooth entry bore + the
-    threaded band (BOTTLE_TURNS whole turns starting at SOCKET_ENTRY_LEAD).
+    threaded band (`turns` WHOLE turns starting at SOCKET_ENTRY_LEAD).
     Subtract with clean=False.
 
     cone_ceiling=True makes a BLIND socket that closes as a 45° cone rising
@@ -100,7 +102,7 @@ def socket_cutter(total_len, over_hi=_END_OVER, cone_ceiling=False):
     Built smooth-first (cyl + mouth cone + ceiling cone), thread cut LAST —
     booleans on the finished helix are the slow/fragile ones.
     """
-    thread_top = SOCKET_ENTRY_LEAD + BOTTLE_TURNS * BOTTLE_PITCH
+    thread_top = SOCKET_ENTRY_LEAD + turns * BOTTLE_PITCH
     assert thread_top < total_len, "thread must end inside the socket"
 
     if cone_ceiling:
@@ -116,7 +118,7 @@ def socket_cutter(total_len, over_hi=_END_OVER, cone_ceiling=False):
         # width, so it slices as a point anyway.
         blank = blank.union(_cone(SOCKET_BORE_D, 0.2,
                                   (SOCKET_BORE_D - 0.2) / 2.0, total_len))
-    return blank.cut(_valley_sweep(SOCKET_ENTRY_LEAD), clean=False)
+    return blank.cut(_valley_sweep(SOCKET_ENTRY_LEAD, turns), clean=False)
 
 
 def build_socket_coupon():
@@ -132,7 +134,7 @@ def build_socket_coupon():
     return body.cut(socket_cutter(COUPON_H, over_hi=_END_OVER), clean=False)
 
 
-def probe_socket_thread(wp, label="socket"):
+def probe_socket_thread(wp, label="socket", turns=BOTTLE_TURNS):
     """Crest solid/void probe (the ONLY reliable thread-failure detector).
 
     Marches up Z at a radius just outside the ridge tip: a healthy female
@@ -151,7 +153,7 @@ def probe_socket_thread(wp, label="socket"):
     shape = wp.val().wrapped
     r = SOCKET_RIDGE_TIP_D / 2.0 + 0.15
     z0 = SOCKET_ENTRY_LEAD + 0.1
-    z1 = SOCKET_ENTRY_LEAD + BOTTLE_TURNS * BOTTLE_PITCH - 0.1
+    z1 = SOCKET_ENTRY_LEAD + turns * BOTTLE_PITCH - 0.1
     n = 60
     for theta_deg in (90.0, 270.0):
         th = math.radians(theta_deg)
