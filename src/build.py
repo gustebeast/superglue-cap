@@ -22,6 +22,7 @@ from cadkit.cq_colors import color
 from cadkit.freecad import show
 from cadkit.step_export import export_step
 
+from .cap import build_cap
 from .dimensions import COUNTER_Z
 from .thread_socket import build_socket_coupon, probe_socket_thread
 
@@ -30,19 +31,28 @@ OUT = pathlib.Path(__file__).resolve().parent.parent
 
 # ── Palette (dark-viewer friendly; black is reserved for TPU) ────────────────
 COLOR = {
+    "cap":           "#E0973C",   # warm amber — product part
     "socket_coupon": "#6B8AAB",   # slate blue — test piece, not a product part
     "build_counter": "#F0A878",   # salmon accent
 }
 
+# Coupon offset: off to the side of the cap in the assembly + overlap gate.
+COUPON_DX = 40.0
+
+cap = build_cap()
 socket_coupon = build_socket_coupon()
 # A silent OCCT helix failure looks like a clean part — always probe.
+probe_socket_thread(cap, "cap")
 probe_socket_thread(socket_coupon, "socket_coupon")
 
 # Map of part name → (workplane, output filename, optional note).
 PARTS = {
+    "cap": (cap, "cap.step",
+            "solid-roof cap — print mouth (chamfered end) DOWN, axis "
+            "vertical, no supports"),
     "socket_coupon": (socket_coupon, "test_bottle_socket.step",
-                      "thread-fit coupon — print mouth (chamfered end) DOWN, "
-                      "axis vertical, no supports; must spin onto the bottle"),
+                      "thread-fit coupon (validated: fits the bottle) — print "
+                      "mouth DOWN, axis vertical, no supports"),
 }
 
 
@@ -55,7 +65,8 @@ def _export(name):
 
 def collect_components():
     """Placed parts at as-built positions, for tools/check_overlaps.py."""
-    return [("socket_coupon", socket_coupon)]
+    return [("cap", cap),
+            ("socket_coupon", socket_coupon.translate((COUPON_DX, 0, 0)))]
 
 
 # ── Build counter — floating 3-D number, bumped every full build ─────────────
@@ -88,7 +99,9 @@ def _export_assembly():
     build_n = _bump_build_counter()
     assembly = (
         cq.Assembly(name="superglue_cap")
-        .add(socket_coupon, name="socket_coupon",
+        .add(cap, name="cap", color=color(COLOR["cap"]))
+        # Validated fit coupon, kept off to the side per the coupon rule.
+        .add(socket_coupon.translate((COUPON_DX, 0, 0)), name="socket_coupon",
              color=color(COLOR["socket_coupon"]))
     )
     counter = _build_counter_model(build_n)
