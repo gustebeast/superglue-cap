@@ -73,11 +73,12 @@ probe_socket_thread(socket_coupon, "socket_coupon")
 # Map of part name → (workplane, output filename, optional note).
 PARTS = {
     "nozzle": (nozzle, "nozzle.step",
-               "screws onto the bottle; dispensing cone + male collar for "
-               "the cap — print mouth (chamfered end) DOWN, no supports"),
+               "screws onto the bottle; straight ribbed barrel, internal "
+               "cone to a Ø0.8 orifice — print mouth (chamfered end) DOWN, "
+               "no supports; clear the orifice with a pin or slice at 0.2"),
     "cap": (cap, "cap.step",
-            "screws onto the nozzle collar, tip seals into the 45° pocket — "
-            "print mouth DOWN, no supports"),
+            "screws onto the nozzle collar; flat ceiling seals against the "
+            "barrel's flat tip face — print mouth DOWN, no supports"),
     "socket_coupon": (socket_coupon, "test_bottle_socket.step",
                       "thread-fit coupon (validated: fits the bottle) — print "
                       "mouth DOWN, axis vertical, no supports"),
