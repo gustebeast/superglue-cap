@@ -134,13 +134,13 @@ def build_socket_coupon():
     return body.cut(socket_cutter(COUPON_H, over_hi=_END_OVER), clean=False)
 
 
-def probe_socket_thread(wp, label="socket", turns=BOTTLE_TURNS):
+def probe_thread_band(wp, r, z0, z1, label="thread", min_transitions=3):
     """Crest solid/void probe (the ONLY reliable thread-failure detector).
 
-    Marches up Z at a radius just outside the ridge tip: a healthy female
-    thread alternates ridge (#) and groove (.); a silently-failed one is all
-    '#' (no bore / wiped cutter) or all '.' (valley cut no-oped → smooth
-    bore). Raises RuntimeError on a bad pattern.
+    Marches up Z at radius r through the thread band [z0, z1]: a healthy
+    thread alternates solid (#) and void (.); a silently-failed one is all
+    '#' or all '.'. Raises RuntimeError on a bad pattern. Works for any
+    thread — the custom socket and cadkit.threads cuts alike.
 
     Probes at θ=90° and θ=270°, NEVER θ=0: the helix seam (start/end profile
     faces) lies exactly in the y=0 plane, and the classifier reports those
@@ -151,9 +151,6 @@ def probe_socket_thread(wp, label="socket", turns=BOTTLE_TURNS):
     from OCP.gp import gp_Pnt
 
     shape = wp.val().wrapped
-    r = SOCKET_RIDGE_TIP_D / 2.0 + 0.15
-    z0 = SOCKET_ENTRY_LEAD + 0.1
-    z1 = SOCKET_ENTRY_LEAD + turns * BOTTLE_PITCH - 0.1
     n = 60
     for theta_deg in (90.0, 270.0):
         th = math.radians(theta_deg)
@@ -166,8 +163,18 @@ def probe_socket_thread(wp, label="socket", turns=BOTTLE_TURNS):
         pattern = "".join(pat)
         transitions = sum(1 for a, b in zip(pattern, pattern[1:]) if a != b)
         print(f"[probe {label}] theta={theta_deg:.0f} r={r:.2f}  {pattern}")
-        if "#" not in pattern or "." not in pattern or transitions < 3:
+        if "#" not in pattern or "." not in pattern or transitions < min_transitions:
             raise RuntimeError(
                 f"{label}: thread probe failed at theta={theta_deg:.0f} "
                 f"({transitions} transitions) — the helix boolean silently "
                 f"no-oped or wiped; see THREADS_README.md")
+
+
+def probe_socket_thread(wp, label="socket", turns=BOTTLE_TURNS):
+    """Probe the bottle-socket thread band of a part built on socket_cutter()."""
+    probe_thread_band(
+        wp,
+        r=SOCKET_RIDGE_TIP_D / 2.0 + 0.15,
+        z0=SOCKET_ENTRY_LEAD + 0.1,
+        z1=SOCKET_ENTRY_LEAD + turns * BOTTLE_PITCH - 0.1,
+        label=label)
