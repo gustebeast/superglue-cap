@@ -34,14 +34,14 @@ BOTTLE_PITCH   = 2.0     # axial crest-to-crest, single start
 BOTTLE_TURNS   = 2.0     # engagement length ≈ 4 mm of thread on the neck
 
 # ── Female socket thread (printed, asymmetric profile) ──────────────────────
-# Clearances are DIAMETRAL and deliberately on the printed (female) side —
-# the male is a manufactured bottle neck we can't change. Print-tested values
-# go in the table in cadkit/THREADS_README.md once the coupon verdict is in.
-SOCKET_CREST_CLR   = 0.4                 # bore wall Ø over male crest (0.2/side)
-SOCKET_BORE_D      = BOTTLE_MAJOR_D + SOCKET_CREST_CLR    # 13.4 — groove-root bore
-SOCKET_RIDGE_TIP_D = 12.0                # female ridge tip Ø → 0.5 mm radial bite
-                                         # into the male flank, 0.5 mm clear of
-                                         # the male root (Ø11)
+# v2 (fit iteration, 2026-07-13): the v1 socket (bore Ø13.4 / tip Ø12.0 off
+# the measured Ø13 crest) was undersized on the actual bottle — the user
+# re-specified the socket DIRECTLY: bore Ø15.3, thread height 0.8, tip Ø13.7.
+# Tip Ø13.7 > the originally measured male crest Ø13.0, so the real neck is
+# bigger than first measured (BOTTLE_* above are stale until re-measured —
+# the socket dims below are now the source of truth for fit).
+SOCKET_BORE_D      = 15.3                # groove-root bore (user-specified ID)
+SOCKET_RIDGE_TIP_D = 13.7                # female ridge tip Ø (= bore − 2 × 0.8)
 RIDGE_TIP_FLAT     = 0.4                 # axial flat on the ridge tip (≥ 1 extrusion)
 RIDGE_TOP_SLOPE_DEG = 15.0               # up-facing top flank, from horizontal
 SOCKET_ENTRY_LEAD  = 1.2                 # smooth bore below the first ridge
@@ -57,6 +57,7 @@ COUPON_H    = SOCKET_ENTRY_LEAD + BOTTLE_TURNS * BOTTLE_PITCH + 0.8   # 6.0 — 
 COUNTER_Z = 30.0                         # build number float height
 
 # ── Invariants ───────────────────────────────────────────────────────────────
-assert SOCKET_RIDGE_TIP_D > BOTTLE_MINOR_D, "ridge tip must clear the male root"
-assert SOCKET_RIDGE_TIP_D < BOTTLE_MAJOR_D, "ridge must actually engage the male flank"
+assert SOCKET_RIDGE_TIP_D < SOCKET_BORE_D, "thread height must be positive"
 assert SOCKET_BORE_D > BOTTLE_MAJOR_D, "bore must clear the male crest"
+# (Ridge-vs-male-flank checks retired: BOTTLE_MAJOR/MINOR_D are stale — the v1
+# coupon proved them undersized. Re-add once the neck is re-measured.)
