@@ -48,10 +48,23 @@ SOCKET_ENTRY_LEAD  = 1.2                 # smooth bore below the first ridge
                                          # (clears elephant's foot, starts square)
 SOCKET_MOUTH_CHAMFER = 0.8               # conical flare at the mouth (easy start)
 
+# FIT VERDICT (print-tested 2026-07-13, 0.4 nozzle): bore Ø15.3 / tip Ø13.7 /
+# pitch 2 / 2 turns THREADS ONTO THE BOTTLE — these are the validated numbers.
+SOCKET_WALL = 2.6                        # wall behind the thread (≥ 6 perimeters at 0.4)
+
 # ── Thread-fit coupon (test_bottle_socket.step) ──────────────────────────────
-COUPON_WALL = 2.6                        # ≥ 6 perimeters at 0.4 nozzle behind the thread
-COUPON_OD   = SOCKET_BORE_D + 2 * COUPON_WALL   # 18.6
+COUPON_OD   = SOCKET_BORE_D + 2 * SOCKET_WALL   # 20.5
 COUPON_H    = SOCKET_ENTRY_LEAD + BOTTLE_TURNS * BOTTLE_PITCH + 0.8   # 6.0 — open tube
+
+# ── Cap (cap.step) — solid conical roof, prints mouth-down, no supports ─────
+# The old cap's interior is 11.5 deep: that much VERTICAL bore wall (threads
+# in its lower band, same validated socket), then the ceiling closes as a 45°
+# cone (a flat ceiling would be an unprintable bridge). The exterior follows:
+# Ø20.5 cylinder, then a 45° cone truncated to a small flat (a sharp apex
+# prints badly; the flat keeps ≥1 mm of solid above the interior apex).
+CAP_SOCKET_DEPTH = 11.5                  # interior vertical-wall depth (old cap)
+CAP_OD           = SOCKET_BORE_D + 2 * SOCKET_WALL   # 20.5
+CAP_TOP_FLAT_D   = 3.0                   # truncated cone tip flat
 
 # ── Assembly viz ─────────────────────────────────────────────────────────────
 COUNTER_Z = 30.0                         # build number float height

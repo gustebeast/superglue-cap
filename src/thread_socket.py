@@ -86,23 +86,36 @@ def _valley_sweep(z0):
     return sweep.translate((0, 0, z0))
 
 
-def socket_cutter(total_len, over_hi=_END_OVER):
+def socket_cutter(total_len, over_hi=_END_OVER, cone_ceiling=False):
     """The complete socket cutter for a body whose mouth face is at z=0 and
     which extends up to z=total_len: flared mouth + smooth entry bore + the
     threaded band (BOTTLE_TURNS whole turns starting at SOCKET_ENTRY_LEAD).
-    Subtract with clean=False. over_hi=0 for a BLIND socket (cap ceiling).
+    Subtract with clean=False.
 
-    Built smooth-first (cyl + mouth cone), thread cut LAST — booleans on the
-    finished helix are the slow/fragile ones.
+    cone_ceiling=True makes a BLIND socket that closes as a 45° cone rising
+    from the bore at z=total_len (apex at total_len + bore radius) — the
+    self-supporting ceiling for a solid-roof cap printed mouth-down. over_hi
+    is ignored in that case (the cone IS the top end).
+
+    Built smooth-first (cyl + mouth cone + ceiling cone), thread cut LAST —
+    booleans on the finished helix are the slow/fragile ones.
     """
     thread_top = SOCKET_ENTRY_LEAD + BOTTLE_TURNS * BOTTLE_PITCH
     assert thread_top < total_len, "thread must end inside the socket"
 
+    if cone_ceiling:
+        over_hi = 0.0
     blank = _cyl(SOCKET_BORE_D, total_len + _END_OVER + over_hi, z=-_END_OVER)
     mouth_d = SOCKET_BORE_D + 2.0 * SOCKET_MOUTH_CHAMFER
     blank = (blank
              .union(_cyl(mouth_d, _END_OVER, z=-_END_OVER))
              .union(_cone(mouth_d, SOCKET_BORE_D, SOCKET_MOUTH_CHAMFER, 0.0)))
+    if cone_ceiling:
+        # 45° ceiling: Ø bore at total_len narrowing to a near-apex. A true
+        # apex makes loft() unhappy; a Ø0.2 top face is below one extrusion
+        # width, so it slices as a point anyway.
+        blank = blank.union(_cone(SOCKET_BORE_D, 0.2,
+                                  (SOCKET_BORE_D - 0.2) / 2.0, total_len))
     return blank.cut(_valley_sweep(SOCKET_ENTRY_LEAD), clean=False)
 
 
