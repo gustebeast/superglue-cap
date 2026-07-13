@@ -13,6 +13,7 @@ import cadquery as cq
 from .dimensions import (
     CAP_OD,
     CAP_SOCKET_DEPTH,
+    CAP_SOCKET_TURNS,
     CAP_TOP_FLAT_D,
     SOCKET_BORE_D,
 )
@@ -33,5 +34,6 @@ def build_cap():
     body = body.union(_cone(CAP_OD, CAP_TOP_FLAT_D, CAP_CONE_H, CAP_SOCKET_DEPTH))
     # Mouth-edge chamfer BEFORE the thread boolean (chamfer → cut, never after).
     body = body.edges("<Z").chamfer(0.6)
-    return body.cut(socket_cutter(CAP_SOCKET_DEPTH, cone_ceiling=True),
+    return body.cut(socket_cutter(CAP_SOCKET_DEPTH, cone_ceiling=True,
+                                  turns=CAP_SOCKET_TURNS),
                     clean=False)

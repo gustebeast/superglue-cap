@@ -23,7 +23,7 @@ from cadkit.freecad import show
 from cadkit.step_export import export_step
 
 from .cap import build_cap
-from .dimensions import COUNTER_Z
+from .dimensions import CAP_SOCKET_TURNS, COUNTER_Z
 from .thread_socket import build_socket_coupon, probe_socket_thread
 
 # Anchor every output to the project folder, regardless of launch cwd.
@@ -42,7 +42,7 @@ COUPON_DX = 40.0
 cap = build_cap()
 socket_coupon = build_socket_coupon()
 # A silent OCCT helix failure looks like a clean part — always probe.
-probe_socket_thread(cap, "cap")
+probe_socket_thread(cap, "cap", turns=CAP_SOCKET_TURNS)
 probe_socket_thread(socket_coupon, "socket_coupon")
 
 # Map of part name → (workplane, output filename, optional note).
