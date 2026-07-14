@@ -34,7 +34,6 @@ SOCKET_MOUTH_CHAMFER = 0.0               # NO mouth flare: the mouth face is the
                                          # bore guides the bottle fine (restore
                                          # ~0.4 here if starting feels fiddly)
 SOCKET_VALLEY_OVERSHOOT = 0.25           # valley cut past the bore wall (thread_socket)
-SOCKET_ENTRY_MARGIN  = 0.2               # ridge underside clears the chamfer by this
 
 
 class BottleSpec:
@@ -54,18 +53,20 @@ class BottleSpec:
         return self.bore_d + 2 * SOCKET_WALL
 
     @property
-    def valley_drop(self):
-        # How far the ridge's 45° underside extends BELOW the helix start,
-        # measured at the bore wall (tip half-flat + full radial depth+overshoot).
-        return (RIDGE_TIP_FLAT / 2
-                + self.bore_d / 2 + SOCKET_VALLEY_OVERSHOOT - self.ridge_tip_d / 2)
-
-    @property
-    def entry_lead(self):
-        # Smooth bore below the first ridge — deep enough that the ridge's
-        # underside REACHES THE WALL above the mouth-chamfer flare (a lower
-        # start leaves the first ridge edge hanging detached from the wall).
-        return SOCKET_MOUTH_CHAMFER + self.valley_drop + SOCKET_ENTRY_MARGIN
+    def thread_z0(self):
+        # Helix start BELOW the floor, so the first ridge emerges THROUGH the
+        # mouth face and its cross-section widens the bed-contact ring (same
+        # trick as the cap's nut). This is the start point that MAXIMIZES
+        # bottom surface: the ridge's up-facing flank at the wall last touches
+        # z=0 when the helix starts at −(tip half-flat + wall_depth·tan(top
+        # slope)) — starting lower adds no floor material, higher gives some
+        # up. The 0.25 margin also keeps the sweep's start face clear of the
+        # cutter blank's bottom (a near-coincident face grazes).
+        import math
+        wall_depth = (self.bore_d - self.ridge_tip_d) / 2
+        return -(RIDGE_TIP_FLAT / 2
+                 + wall_depth * math.tan(math.radians(RIDGE_TOP_SLOPE_DEG))
+                 + 0.25)
 
     @property
     def top_rise(self):
@@ -78,10 +79,10 @@ class BottleSpec:
 
     @property
     def socket_turns(self):
-        # WHOLE turns above the entry lead (a partial turn wipes the part),
-        # leaving room for the last ridge's top flank below the ceiling so
-        # the thread touches the wall over its complete path.
-        return int((self.skirt_depth - self.entry_lead - self.top_rise)
+        # WHOLE turns above the (below-floor) helix start (a partial turn
+        # wipes the part), leaving room for the last ridge's top flank below
+        # the ceiling so the thread touches the wall over its complete path.
+        return int((self.skirt_depth - self.thread_z0 - self.top_rise)
                    // self.pitch)
 
     @property
@@ -99,7 +100,8 @@ class BottleSpec:
 
     @property
     def coupon_h(self):
-        return self.entry_lead + self.coupon_turns * self.pitch + 0.8
+        return (self.thread_z0 + self.coupon_turns * self.pitch
+                + self.top_rise + 0.3)
 
 
 MACBEATH = BottleSpec("macbeath", bore_d=15.3, ridge_tip_d=13.7,
@@ -169,10 +171,10 @@ COUNTER_Z = 115.0                        # build number float height
 for _b in BOTTLES:
     assert _b.ridge_tip_d < _b.bore_d, f"{_b.name}: thread height must be positive"
     assert _b.socket_turns >= 2, f"{_b.name}: too shallow for 2 socket turns"
-    assert _b.entry_lead + _b.socket_turns * _b.pitch < _b.skirt_depth, \
+    assert _b.thread_z0 + _b.socket_turns * _b.pitch < _b.skirt_depth, \
         f"{_b.name}: socket thread must end inside the skirt"
     # The LAST ridge's up-facing flank must also stay on the wall (below the
     # ceiling), so the thread touches the wall over its complete path.
-    assert (_b.entry_lead + _b.socket_turns * _b.pitch + _b.top_rise
+    assert (_b.thread_z0 + _b.socket_turns * _b.pitch + _b.top_rise
             <= _b.skirt_depth), f"{_b.name}: last ridge runs into the ceiling"
     assert _b.bore_d > NOZZLE_THROAT_D, f"{_b.name}: bore narrower than the throat"
