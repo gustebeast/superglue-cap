@@ -85,10 +85,10 @@ def _valley_sweep(spec, z0, turns):
 def socket_cutter(spec, total_len, over_hi=_END_OVER, cone_ceiling=False,
                   turns=None):
     """The complete socket cutter for a body whose mouth face is at z=0 and
-    which extends up to z=total_len: flared mouth + smooth entry bore + the
-    threaded band (`turns` WHOLE turns starting at spec.entry_lead, which is
-    derived so the first ridge's underside reaches the wall ABOVE the mouth
-    chamfer; default turns = the spec's full-skirt count). clean=False.
+    which extends up to z=total_len: the threaded band starts BELOW the floor
+    (spec.thread_z0), so the first ridge emerges through the mouth face and
+    widens the printed bed-contact ring — the same trick as the cap's nut.
+    Default turns = the spec's full-skirt count. Subtract with clean=False.
 
     cone_ceiling=True makes a BLIND socket that closes as a 45° cone rising
     from the bore at z=total_len — the self-supporting ceiling for a nozzle
@@ -99,7 +99,7 @@ def socket_cutter(spec, total_len, over_hi=_END_OVER, cone_ceiling=False,
     """
     if turns is None:
         turns = spec.socket_turns
-    thread_top = spec.entry_lead + turns * spec.pitch
+    thread_top = spec.thread_z0 + turns * spec.pitch
     assert thread_top < total_len, "thread must end inside the socket"
 
     if cone_ceiling:
@@ -118,7 +118,7 @@ def socket_cutter(spec, total_len, over_hi=_END_OVER, cone_ceiling=False,
         # width, so it slices as a point anyway.
         blank = blank.union(_cone(spec.bore_d, 0.2,
                                   (spec.bore_d - 0.2) / 2.0, total_len))
-    return blank.cut(_valley_sweep(spec, spec.entry_lead, turns), clean=False)
+    return blank.cut(_valley_sweep(spec, spec.thread_z0, turns), clean=False)
 
 
 def build_socket_coupon(spec):
@@ -177,9 +177,13 @@ def probe_socket_thread(wp, spec, turns=None, label=None):
     """Probe the bottle-socket thread band of a part built on socket_cutter()."""
     if turns is None:
         turns = spec.socket_turns
+    # min_transitions=2: with the helix starting below the floor, a short
+    # (2-turn) socket can show a single full ridge band at some angles. The
+    # both-states-present check still catches all-solid / all-void no-ops.
     probe_thread_band(
         wp,
         r=spec.ridge_tip_d / 2.0 + 0.15,
-        z0=spec.entry_lead + 0.1,
-        z1=spec.entry_lead + turns * spec.pitch - 0.1,
-        label=label or f"{spec.name} socket")
+        z0=0.3,                     # the helix starts below the floor
+        z1=spec.thread_z0 + turns * spec.pitch - 0.1,
+        label=label or f"{spec.name} socket",
+        min_transitions=2)
