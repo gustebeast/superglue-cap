@@ -88,8 +88,8 @@ for _b in BOTTLES:
 PARTS = {
     "nozzle_macbeath": (nozzle_macbeath, "nozzle_macbeath.step",
                         "macbeath-bottle nozzle (socket print-validated) — "
-                        "print mouth DOWN, no supports; pin-clear the Ø0.8 "
-                        "orifice or slice at 0.2"),
+                        "print flat mouth DOWN, no supports; pin-clear the "
+                        "Ø0.8 orifice or slice at 0.2"),
     "nozzle_loctite": (nozzle_loctite, "nozzle_loctite.step",
                        "loctite-bottle nozzle (socket fit PENDING — print "
                        "its coupon first) — print mouth DOWN, no supports"),
