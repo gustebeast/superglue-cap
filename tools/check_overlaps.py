@@ -10,8 +10,9 @@ the seated parts (``src.build.collect_components``) and the project's
 
 Exit code is the number of unintended overlapping pairs (0 = clean).
 
-The cap is checked SEATED on the nozzle collar: their thread flanks and the
-preloaded tip-in-pocket seal are the designed contact, hence whitelisted.
+The cap is checked SEATED on the macbeath nozzle's collar: their thread
+flanks and the preloaded tip-in-pocket seal are the designed contact, hence
+whitelisted. The loctite nozzle and both coupons sit off to the side.
 """
 from __future__ import annotations
 
@@ -20,7 +21,7 @@ import sys
 
 from cadkit.overlap_check import run
 
-INTENDED: set[frozenset[str]] = {frozenset({"nozzle", "cap"})}
+INTENDED: set[frozenset[str]] = {frozenset({"nozzle_macbeath", "cap"})}
 
 
 def intended(na, nb) -> bool:
