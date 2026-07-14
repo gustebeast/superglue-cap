@@ -125,18 +125,20 @@ assert NOZZLE_CONE_BASE_D / 2 - _INT_R_AT(NOZZLE_CONE_Z0) >= 1.2, \
 assert NOZZLE_TIP_OD / 2 - _INT_R_AT(NOZZLE_TIP_Z) >= 0.75, "tip wall too thin"
 
 # ── Cap (cap.step) — screws onto the collar, mouth lands FLAT on the shoulder ─
-# Interior, mouth-up: nut thread section (threaded_rod cutter, nominal), a 45°
-# neck-down, a taper hugging the dispensing cone (+0.5/side), then a 45°
-# conical SEAL POCKET for the tip rim. Fully screwed on, the cap's flat mouth
-# rim closes on the nozzle's flat shoulder (the clean contact area) while the
-# tip rim wedges CAP_SEAL_PRELOAD into the pocket — small enough that the
-# plastic gives and BOTH contacts engage.
-CAP_OD           = 18.0
-CAP_WALL_MIN     = (CAP_OD - CAP_THREAD_MAJOR_D) / 2          # 2.5 behind the nut
+# A SHELL that follows what it caps: the exterior is the interior cavity
+# (which hugs the dispensing cone) offset by CAP_WALL, so the cap is conical
+# like the nozzle instead of a solid slug. The thread BOSS at the mouth and
+# the grip ribs grow outward from that shell where they need to.
+# Interior, mouth-up: nut thread section (nominal), a 45° neck-down, a taper
+# hugging the cone (+0.5/side), then a 45° SEAL POCKET the tip rim wedges
+# into, CAP_SEAL_PRELOAD past nominal — small enough that the plastic gives
+# and the mouth rim still closes flat on the shoulder.
+CAP_WALL         = 1.6                   # shell thickness over the cavity
+CAP_BOSS_OD      = CAP_THREAD_MAJOR_D + 2 * CAP_WALL          # 16.2 thread boss
 CAP_NUT_H        = NOZZLE_COLLAR_LEN     # 6.0 — female thread band at the mouth
 CAP_SEAL_PRELOAD = 0.15                  # tip/pocket interpenetration at seat
 CAP_CONE_CLR     = 0.5                   # radial clearance around the dispensing cone
-CAP_TOP_FLAT_D   = 5.0                   # truncated top (no needle apex)
+CAP_TOP_FLAT_D   = 2.0                   # truncated top (no needle apex)
 CAP_SEAT_Z       = NOZZLE_SHOULDER_Z     # mouth plane = the flat shoulder, seated
 
 # ── Grip ribs (both pieces) ──────────────────────────────────────────────────

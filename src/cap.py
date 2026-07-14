@@ -1,27 +1,35 @@
-"""The cap — quarter-turn onto the nozzle collar; flat mouth rim lands on the
-nozzle's flat shoulder while the tip seals into a 45° pocket.
+"""The cap — quarter-turn onto the nozzle collar; a conical SHELL that
+follows the dispensing cone it caps at CAP_WALL thickness.
 
-Interior, mouth-up (z=0 at the mouth, = nozzle z NOZZLE_SHOULDER_Z seated):
-  nut     female 4-start quarter-turn thread (src/quick_thread.py cutter at
-          NOMINAL Ø13/Ø11 — clearance lives on the male collar);
-  neck    45° narrowing from the thread bore to the cone cavity;
-  cavity  taper hugging the 50 mm dispensing cone at CAP_CONE_CLR per side;
-  pocket  45° cone the nozzle's Ø3 tip rim wedges into, CAP_SEAL_PRELOAD
-          (0.15) past nominal — small enough that the plastic gives and the
-          mouth rim still closes flat on the shoulder. Torque loads both.
+Exterior (one revolved profile, mouth-up): chamfered mouth → thread BOSS
+(Ø16.2 cylinder over the nut band — threads need wall, so the boss grows
+outward from the shell) → 45° taper onto the SHELL CONE (= cavity + CAP_WALL,
+tracking the nozzle cone all the way up) → a top cone closing over the seal
+pocket with CAP_WALL of solid at the centreline. Grip ribs sit on the boss
+only — the shell cone stays clean.
 
-All down-facing interior surfaces are ≥45°. Ribbed outside for grip.
+Interior (unchanged from the solid version): nut thread (nominal Ø13/Ø11
+quarter-turn cutter — clearance lives on the male collar), 45° neck-down,
+cavity hugging the cone at CAP_CONE_CLR per side, then the 45° seal pocket
+(now with a small Ø1.4 flat ceiling — a trivial bridge — instead of a needle
+apex, buying roof margin). CAP_SEAL_PRELOAD (0.15) keeps the tip pressed
+into the pocket while the mouth rim closes flat on the shoulder.
+
+All down-facing interior surfaces are ≥45°; every exterior surface faces up.
 PRINT: mouth DOWN, axis vertical, no supports.
 """
 
+import cadquery as cq
+
 from .dimensions import (
+    CAP_BOSS_OD,
     CAP_CONE_CLR,
     CAP_NUT_H,
-    CAP_OD,
     CAP_RIB_N,
     CAP_SEAL_PRELOAD,
     CAP_THREAD_MAJOR_D,
     CAP_TOP_FLAT_D,
+    CAP_WALL,
     GRIP_RIB_Z0,
     NOZZLE_CONE_BASE_D,
     NOZZLE_CONE_Z0,
@@ -31,7 +39,7 @@ from .dimensions import (
 )
 from .grip import add_grip_ribs
 from .quick_thread import quick_nut_cutter
-from .thread_socket import _cone, _cyl
+from .thread_socket import _cone
 
 # ── Interior stack (cap coords: nozzle z minus NOZZLE_SHOULDER_Z) ────────────
 NUT_Z0 = -0.5                                          # cutter overshoots the mouth
@@ -40,23 +48,33 @@ CAVITY_D0 = NOZZLE_CONE_BASE_D + 2 * CAP_CONE_CLR      # 11.0 cavity over the co
 NECK_H = (CAP_THREAD_MAJOR_D - CAVITY_D0) / 2.0        # 1.0 — 45° neck-down
 CAVITY_Z0 = NECK_Z0 + NECK_H                           # 7.0
 
-TIP_Z = NOZZLE_TIP_Z - NOZZLE_SHOULDER_Z               # 35.0 tip plane at seat
+TIP_Z = NOZZLE_TIP_Z - NOZZLE_SHOULDER_Z               # 34.5 tip plane at seat
 POCKET_D0 = NOZZLE_TIP_OD + 1.9                        # 4.3 pocket base Ø — wide
                                                        # enough that the cavity
                                                        # keeps clearing the cone
                                                        # right up to the pocket
-POCKET_TIP_D = 0.8                                     # truncated pocket apex
+POCKET_TIP_D = 1.4                                     # flat pocket ceiling (small bridge)
 # Tip rim (Ø NOZZLE_TIP_OD) meets the 45° pocket half-way up; place that
 # contact circle CAP_SEAL_PRELOAD below the seated tip plane.
-POCKET_Z0 = TIP_Z - CAP_SEAL_PRELOAD - (POCKET_D0 - NOZZLE_TIP_OD) / 2.0   # 34.35
-POCKET_H = (POCKET_D0 - POCKET_TIP_D) / 2.0            # 1.6 — 45° cone
-POCKET_TOP_Z = POCKET_Z0 + POCKET_H                    # 35.95 interior ceiling
+POCKET_Z0 = TIP_Z - CAP_SEAL_PRELOAD - (POCKET_D0 - NOZZLE_TIP_OD) / 2.0   # 33.4
+POCKET_H = (POCKET_D0 - POCKET_TIP_D) / 2.0            # 1.45 — 45° cone
+POCKET_TOP_Z = POCKET_Z0 + POCKET_H                    # 34.85 interior ceiling
 
-# ── Exterior ─────────────────────────────────────────────────────────────────
-SHELL_CYL_H = 33.0                                     # cylinder, then 45° cone
-CAP_CONE_H = (CAP_OD - CAP_TOP_FLAT_D) / 2.0           # 6.5
-CAP_TOTAL_H = SHELL_CYL_H + CAP_CONE_H                 # 39.5
-assert CAP_TOTAL_H - POCKET_TOP_Z >= 1.0, "roof too thin above the seal pocket"
+# ── Exterior shell profile ───────────────────────────────────────────────────
+BOSS_R = CAP_BOSS_OD / 2.0                             # 8.1
+BOSS_TOP = CAVITY_Z0 + 1.0                             # 8.0 — boss covers nut + neck
+TOP_Z = POCKET_TOP_Z + CAP_WALL                        # 36.45 — CAP_WALL over the pocket
+TOP_FLAT_R = CAP_TOP_FLAT_D / 2.0                      # 1.0
+
+# Shell cone = cavity line + CAP_WALL: r(z) = _C − _M·z. The boss blends onto
+# it with a 45° up-facing taper; solve the two lines for the join point.
+_M = ((CAVITY_D0 - POCKET_D0) / 2.0) / (POCKET_Z0 - CAVITY_Z0)      # 0.1269
+_C = CAVITY_D0 / 2.0 + _M * CAVITY_Z0 + CAP_WALL                    # 7.988
+JOIN_Z = (BOSS_R + BOSS_TOP - _C) / (1.0 - _M)                      # 9.29
+JOIN_R = BOSS_R - (JOIN_Z - BOSS_TOP)                               # 6.81
+SHELL_END_R = _C - _M * POCKET_Z0                                   # 3.75 at the pocket base
+assert BOSS_TOP < JOIN_Z < POCKET_Z0, "boss taper misses the shell cone"
+assert SHELL_END_R > TOP_FLAT_R, "top cone inverted"
 
 # The cavity taper must clear the dispensing cone all the way up.
 _cone_d_at = lambda zc: (NOZZLE_CONE_BASE_D
@@ -72,14 +90,17 @@ for _zc in (CAVITY_Z0, 15.0, 25.0, POCKET_Z0):
 
 
 def build_cap():
-    body = _cyl(CAP_OD, SHELL_CYL_H)
-    body = body.union(_cone(CAP_OD, CAP_TOP_FLAT_D, CAP_CONE_H, SHELL_CYL_H))
-    body = add_grip_ribs(body, CAP_OD, CAP_RIB_N,
-                         GRIP_RIB_Z0, SHELL_CYL_H - GRIP_RIB_Z0)
-    # Mouth-edge chamfer while smooth (chamfer → cut, never after).
-    body = body.edges("<Z").chamfer(0.6)
+    # One revolved profile: mouth chamfer, boss, 45° blend, shell cone
+    # tracking the cavity, top cone to a small flat. (x = radius, y = z.)
+    prof = [(BOSS_R - 0.6, 0.0), (BOSS_R, 0.6), (BOSS_R, BOSS_TOP),
+            (JOIN_R, JOIN_Z), (SHELL_END_R, POCKET_Z0),
+            (TOP_FLAT_R, TOP_Z), (0.0, TOP_Z), (0.0, 0.0)]
+    body = (cq.Workplane("XZ").polyline(prof).close()
+            .revolve(360.0, (0, 0, 0), (0, 1, 0)))
+    body = add_grip_ribs(body, CAP_BOSS_OD, CAP_RIB_N,
+                         GRIP_RIB_Z0, BOSS_TOP - GRIP_RIB_Z0)
 
-    # Smooth interior first: neck-down, cone cavity, seal pocket.
+    # Smooth interior: neck-down, cone cavity, seal pocket.
     body = body.cut(_cone(CAP_THREAD_MAJOR_D, CAVITY_D0, NECK_H, NECK_Z0))
     body = body.cut(_cone(CAVITY_D0, POCKET_D0, POCKET_Z0 - CAVITY_Z0, CAVITY_Z0))
     body = body.cut(_cone(POCKET_D0, POCKET_TIP_D, POCKET_H, POCKET_Z0))
