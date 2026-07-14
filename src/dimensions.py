@@ -29,7 +29,10 @@ import math
 SOCKET_WALL          = 2.6               # skirt wall behind the thread (≥6 perims)
 RIDGE_TIP_FLAT       = 0.4               # axial flat on the ridge tip (≥1 extrusion)
 RIDGE_TOP_SLOPE_DEG  = 15.0              # up-facing top flank, from horizontal
-SOCKET_MOUTH_CHAMFER = 0.8               # conical flare at the mouth (easy start)
+SOCKET_MOUTH_CHAMFER = 0.0               # NO mouth flare: the mouth face is the
+                                         # bed-contact ring, and the smooth entry
+                                         # bore guides the bottle fine (restore
+                                         # ~0.4 here if starting feels fiddly)
 SOCKET_VALLEY_OVERSHOOT = 0.25           # valley cut past the bore wall (thread_socket)
 SOCKET_ENTRY_MARGIN  = 0.2               # ridge underside clears the chamfer by this
 
@@ -65,9 +68,21 @@ class BottleSpec:
         return SOCKET_MOUTH_CHAMFER + self.valley_drop + SOCKET_ENTRY_MARGIN
 
     @property
+    def top_rise(self):
+        # How far the LAST ridge's up-facing flank extends ABOVE the helix
+        # top, at the bore wall.
+        import math
+        return (RIDGE_TIP_FLAT / 2
+                + (self.bore_d / 2 + SOCKET_VALLEY_OVERSHOOT - self.ridge_tip_d / 2)
+                * math.tan(math.radians(RIDGE_TOP_SLOPE_DEG)))
+
+    @property
     def socket_turns(self):
-        # WHOLE turns above the entry lead (a partial turn wipes the part).
-        return int((self.skirt_depth - self.entry_lead) // self.pitch)
+        # WHOLE turns above the entry lead (a partial turn wipes the part),
+        # leaving room for the last ridge's top flank below the ceiling so
+        # the thread touches the wall over its complete path.
+        return int((self.skirt_depth - self.entry_lead - self.top_rise)
+                   // self.pitch)
 
     @property
     def shoulder_z(self):
@@ -151,8 +166,6 @@ CAP_RIB_N    = 16                        # around the thread boss
 COUNTER_Z = 115.0                        # build number float height
 
 # ── Per-variant invariants ───────────────────────────────────────────────────
-import math as _math
-
 for _b in BOTTLES:
     assert _b.ridge_tip_d < _b.bore_d, f"{_b.name}: thread height must be positive"
     assert _b.socket_turns >= 2, f"{_b.name}: too shallow for 2 socket turns"
@@ -160,9 +173,6 @@ for _b in BOTTLES:
         f"{_b.name}: socket thread must end inside the skirt"
     # The LAST ridge's up-facing flank must also stay on the wall (below the
     # ceiling), so the thread touches the wall over its complete path.
-    _top_rise = (RIDGE_TIP_FLAT / 2
-                 + (_b.bore_d / 2 + SOCKET_VALLEY_OVERSHOOT - _b.ridge_tip_d / 2)
-                 * _math.tan(_math.radians(RIDGE_TOP_SLOPE_DEG)))
-    assert (_b.entry_lead + _b.socket_turns * _b.pitch + _top_rise
+    assert (_b.entry_lead + _b.socket_turns * _b.pitch + _b.top_rise
             <= _b.skirt_depth), f"{_b.name}: last ridge runs into the ceiling"
     assert _b.bore_d > NOZZLE_THROAT_D, f"{_b.name}: bore narrower than the throat"

@@ -105,10 +105,13 @@ def socket_cutter(spec, total_len, over_hi=_END_OVER, cone_ceiling=False,
     if cone_ceiling:
         over_hi = 0.0
     blank = _cyl(spec.bore_d, total_len + _END_OVER + over_hi, z=-_END_OVER)
-    mouth_d = spec.bore_d + 2.0 * SOCKET_MOUTH_CHAMFER
-    blank = (blank
-             .union(_cyl(mouth_d, _END_OVER, z=-_END_OVER))
-             .union(_cone(mouth_d, spec.bore_d, SOCKET_MOUTH_CHAMFER, 0.0)))
+    if SOCKET_MOUTH_CHAMFER > 1e-9:
+        # Optional mouth flare (off by default: the flat mouth face is the
+        # print's bed-contact ring; the smooth entry bore guides the bottle).
+        mouth_d = spec.bore_d + 2.0 * SOCKET_MOUTH_CHAMFER
+        blank = (blank
+                 .union(_cyl(mouth_d, _END_OVER, z=-_END_OVER))
+                 .union(_cone(mouth_d, spec.bore_d, SOCKET_MOUTH_CHAMFER, 0.0)))
     if cone_ceiling:
         # 45° ceiling: Ø bore at total_len narrowing to a near-apex. A true
         # apex makes loft() unhappy; a Ø0.2 top face is below one extrusion
