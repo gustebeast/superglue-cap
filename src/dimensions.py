@@ -1,161 +1,142 @@
 """Superglue cap — all shared constants (one source of truth).
 
-Replacement dispenser tip + cap for a superglue bottle. The bottle's neck
-thread was measured by hand (calipers, 2026-07-12):
+Replacement dispenser (NOZZLE) + quarter-turn sealing CAP for superglue
+bottles, in TWO bottle variants (one printed cap fits both nozzles —
+everything above the flat shoulder is identical; only the bottle socket,
+and therefore the shoulder height, differs):
 
-  * thread OD (male major)  Ø13.0
-  * thread pitch            2.0 mm crest-to-crest
-  * thread depth            ~1.0 mm  (=> male minor ~Ø11)
-  * SINGLE start, ~2 turns  (confirmed by eye: one ridge end at the rim)
+  * MACBEATH — the original bottle. Socket dims print-validated 2026-07-13
+    (0.4 nozzle): bore Ø15.3 / ridge tip Ø13.7 / pitch 2 / single start /
+    11.5 mm neck engagement. (The neck was first hand-measured Ø13 major /
+    Ø11 minor / depth 1 — the v1 coupon proved that undersized; the socket
+    dims below are the source of truth for fit.)
+  * LOCTITE — measured 2026-07-13: bore Ø18 / ridge tip Ø16 (thread height
+    1.0) / pitch 3 / 11 mm neck engagement. PRINT-FIT PENDING — coupon
+    exported as test_loctite_socket.step.
 
-A symmetric 45° FDM thread (cadkit.threads) is geometrically impossible at
-this pitch/depth combo — two 45° flanks × 1 mm depth consume the whole 2 mm
-pitch, and cadkit's cutter additionally needs depth < pitch/2 − 0.6 (valley
-overshoot) ≈ 0.4 mm, which would leave ~0.15 mm of engagement. So the female
-socket uses a project-local ASYMMETRIC (buttress-style) profile instead, in
-src/thread_socket.py:
+The female socket uses the project-local ASYMMETRIC (buttress) profile —
+45° ridge underside (self-supporting, mouth-down print), gentle up-facing
+top flank — because a symmetric 45° thread can't reach these depth/pitch
+ratios (see src/thread_socket.py). The nozzle↔cap joint is the cadkit
+quarter-turn multistart thread.
 
-  * ridge UNDERSIDE at 45°  — the only down-facing surface, self-supporting
-    when the part prints with its mouth on the bed (axis vertical);
-  * ridge TOP at 15° from horizontal — an up-facing surface, so it carries
-    no overhang constraint and frees the axial room the 45° profile lacks;
-  * ridge tip shortened to ~0.5 mm radial engagement (the bottle's V-thread
-    root is never reached; flank/crest contact does the holding, plenty for
-    a cap).
-
-Printer: Bambu, 0.4 mm nozzle (0.2 available if the fit needs it), axis
-vertical, no supports.
+Printer: Bambu, 0.4 mm nozzle (0.2 available), axis vertical, no supports.
 """
 
-# ── Bottle neck (male thread, measured) ──────────────────────────────────────
-BOTTLE_MAJOR_D = 13.0    # male thread crest Ø
-BOTTLE_MINOR_D = 11.0    # male thread root Ø (major − 2 × measured depth)
-BOTTLE_PITCH   = 2.0     # axial crest-to-crest, single start
-BOTTLE_TURNS   = 2.0     # engagement length ≈ 4 mm of thread on the neck
+import math
 
-# ── Female socket thread (printed, asymmetric profile) ──────────────────────
-# v2 (fit iteration, 2026-07-13): the v1 socket (bore Ø13.4 / tip Ø12.0 off
-# the measured Ø13 crest) was undersized on the actual bottle — the user
-# re-specified the socket DIRECTLY: bore Ø15.3, thread height 0.8, tip Ø13.7.
-# Tip Ø13.7 > the originally measured male crest Ø13.0, so the real neck is
-# bigger than first measured (BOTTLE_* above are stale until re-measured —
-# the socket dims below are now the source of truth for fit).
-SOCKET_BORE_D      = 15.3                # groove-root bore (user-specified ID)
-SOCKET_RIDGE_TIP_D = 13.7                # female ridge tip Ø (= bore − 2 × 0.8)
-RIDGE_TIP_FLAT     = 0.4                 # axial flat on the ridge tip (≥ 1 extrusion)
-RIDGE_TOP_SLOPE_DEG = 15.0               # up-facing top flank, from horizontal
-SOCKET_ENTRY_LEAD  = 1.2                 # smooth bore below the first ridge
-                                         # (clears elephant's foot, starts square)
+# ── Female bottle-socket profile (shared by both variants) ───────────────────
+SOCKET_WALL          = 2.6               # skirt wall behind the thread (≥6 perims)
+RIDGE_TIP_FLAT       = 0.4               # axial flat on the ridge tip (≥1 extrusion)
+RIDGE_TOP_SLOPE_DEG  = 15.0              # up-facing top flank, from horizontal
+SOCKET_ENTRY_LEAD    = 1.2               # smooth bore below the first ridge
 SOCKET_MOUTH_CHAMFER = 0.8               # conical flare at the mouth (easy start)
 
-# FIT VERDICT (print-tested 2026-07-13, 0.4 nozzle): bore Ø15.3 / tip Ø13.7 /
-# pitch 2 / 2 turns THREADS ONTO THE BOTTLE — these are the validated numbers.
-SOCKET_WALL = 2.6                        # wall behind the thread (≥ 6 perimeters at 0.4)
 
-# ── Thread-fit coupon (test_bottle_socket.step) ──────────────────────────────
-COUPON_OD   = SOCKET_BORE_D + 2 * SOCKET_WALL   # 20.5
-COUPON_H    = SOCKET_ENTRY_LEAD + BOTTLE_TURNS * BOTTLE_PITCH + 0.8   # 6.0 — open tube
+class BottleSpec:
+    """One bottle variant: the measured/validated FEMALE socket dims, plus
+    everything derived from them. `bore_d`/`ridge_tip_d` are the printed
+    socket's IDs (clearances already included — they're what fits)."""
 
-# ── Nozzle (nozzle.step) — screws onto the bottle, dispenses ────────────────
-# Bottom-up stack (all z from the bottle-socket mouth):
-#   skirt    Ø20.5 × 11.5 — the validated bottle socket (old cap's depth),
-#            threads the whole vertical wall;
-#   shoulder 45° cone necking Ø20.5 → the cap collar Ø;
-#   collar   male thread the CAP screws onto (cadkit.threads profile below);
-#   cone     the dispensing cone, Ø9 → Ø4 tip, with a Ø2 glue channel.
-# Interior: the socket's 45° ceiling cone narrows from the bore to the glue
-# channel (self-supporting mouth-down), then the channel runs to the tip.
-NOZZLE_SKIRT_DEPTH = 11.5                # interior vertical-wall depth (old cap)
-NOZZLE_SKIRT_OD    = SOCKET_BORE_D + 2 * SOCKET_WALL   # 20.5
-# Threads run the WHOLE skirt wall: as many WHOLE turns as fit above the
-# entry lead (sweep height must be whole turns — a partial turn wipes the
-# part). 11.5 − 1.2 = 10.3 → 5 turns, thread top at 11.2, 0.3 under ceiling.
-NOZZLE_SOCKET_TURNS = int((NOZZLE_SKIRT_DEPTH - SOCKET_ENTRY_LEAD) // BOTTLE_PITCH)  # 5
-assert SOCKET_ENTRY_LEAD + NOZZLE_SOCKET_TURNS * BOTTLE_PITCH < NOZZLE_SKIRT_DEPTH
+    def __init__(self, name, bore_d, ridge_tip_d, pitch, skirt_depth):
+        self.name = name
+        self.bore_d = bore_d              # socket ID at the groove roots
+        self.ridge_tip_d = ridge_tip_d    # socket ID across the ridge tips
+        self.pitch = pitch                # axial crest-to-crest, single start
+        self.skirt_depth = skirt_depth    # how deep the neck enters (bore length)
 
-# ── Nozzle ↔ cap thread — QUARTER-TURN (4-start, 16 mm lead) ─────────────────
-# The cap seals in a 90° turn: 4 starts at LEAD 16 advance 4 mm per quarter
-# turn. The local cross-section is IDENTICAL to the print-proven Ø13/Ø11
-# pitch-4 profile (depth 1.0, 1.0 flats, 45° flanks, ridges 4 mm apart) —
-# only the helix steepens (~24° lead angle). Cut with cadkit.threads'
-# multistart family (multistart_rod / cut_multistart_thread — upstreamed
-# from this project; see THREADS_README.md → multi-start section).
-# Clearance goes on the MALE side (shrink the screw, keep the nut nominal).
+    @property
+    def skirt_od(self):
+        return self.bore_d + 2 * SOCKET_WALL
+
+    @property
+    def socket_turns(self):
+        # WHOLE turns above the entry lead (a partial turn wipes the part).
+        return int((self.skirt_depth - SOCKET_ENTRY_LEAD) // self.pitch)
+
+    @property
+    def shoulder_z(self):
+        # The 45° socket ceiling funnels from the bore down to the shared
+        # throat Ø; the flat shoulder sits where it gets there.
+        return self.skirt_depth + (self.bore_d - NOZZLE_THROAT_D) / 2
+
+    @property
+    def tip_z(self):
+        return self.shoulder_z + DISPENSER_H
+
+    # Thread-fit coupon (test_<name>_socket.step): 2 turns, open tube.
+    coupon_turns = 2
+
+    @property
+    def coupon_h(self):
+        return SOCKET_ENTRY_LEAD + self.coupon_turns * self.pitch + 0.8
+
+
+MACBEATH = BottleSpec("macbeath", bore_d=15.3, ridge_tip_d=13.7,
+                      pitch=2.0, skirt_depth=11.5)
+LOCTITE = BottleSpec("loctite", bore_d=18.0, ridge_tip_d=16.0,
+                     pitch=3.0, skirt_depth=11.0)
+BOTTLES = (MACBEATH, LOCTITE)
+
+# ── Nozzle ↔ cap thread — HALF-TURN (2-start, 8 mm lead) ─────────────────────
+# 180° of rotation advances 4 mm — cap goes from caught to sealed in a half
+# turn. Cross-section = the print-proven Ø13/Ø11 pitch-4 profile; cut with
+# cadkit.threads' multistart family (upstreamed from this project). The 12°
+# lead angle self-locks far better than the earlier 24° quarter-turn version.
+# Clearance on the MALE side (nut stays nominal).
 CAP_THREAD_MAJOR_D = 13.0                # female nut nominal
 CAP_THREAD_MINOR_D = 11.0
-CAP_THREAD_LEAD    = 16.0                # mm advance per full turn
-CAP_THREAD_STARTS  = 4
+CAP_THREAD_LEAD    = 8.0                 # mm advance per full turn
+CAP_THREAD_STARTS  = 2
 CAP_THREAD_SPACING = CAP_THREAD_LEAD / CAP_THREAD_STARTS      # 4.0 ridge spacing
 CAP_THREAD_CLR     = 0.6                 # diametral, off the male collar
 NOZZLE_COLLAR_MAJOR_D = CAP_THREAD_MAJOR_D - CAP_THREAD_CLR   # 12.4
 NOZZLE_COLLAR_MINOR_D = CAP_THREAD_MINOR_D - CAP_THREAD_CLR   # 10.4
 NOZZLE_COLLAR_LEN  = 6.0                 # 1.5 ridge spacings of engagement
 
-# Nozzle stack z's (FLAT shoulder → collar → dispensing cone).
-# The skirt→collar transition is a FLAT annular step, not a cone: the cap's
-# flat mouth rim lands on it for a clean flat contact when fully screwed on
-# (a conical shoulder left an awkward gap under the cap rim). The step is
-# up-facing, so printability is unchanged. It sits high enough that the 45°
-# socket ceiling inside has narrowed clear of the collar wall.
-# The dispensing tip stays the standard cone (Ø9 → Ø4 over 13), with the
-# internal channel tapering from the Ø5 throat to a Ø0.8 orifice at the tip.
-NOZZLE_SHOULDER_Z = 15.5                 # flat shoulder plane — the cap's seat
-NOZZLE_COLLAR_Z0 = NOZZLE_SHOULDER_Z
-NOZZLE_CONE_Z0   = NOZZLE_COLLAR_Z0 + NOZZLE_COLLAR_LEN       # 21.0
-NOZZLE_TIP_Z     = 50.0                  # total dispenser height (user spec)
-NOZZLE_CONE_BASE_D = 10.0                # must pass under the cap's Ø11 ridge tips
-NOZZLE_TIP_OD      = 2.4                 # flat tip rim (the sealing edge) — 0.8 wall
-                                         # around the Ø0.8 orifice (2 perimeters)
-NOZZLE_ORIFICE_D = 0.8                   # minimum inner Ø, at the tip face
-# Interior: ONE continuous cone from the shoulder plane to the orifice. A
-# single cone can't start at the full socket bore (Ø15.3 at z=11.5 would
-# still be Ø7+ inside the Ø12.4 collar — fatter than the collar), so the 45°
-# socket ceiling funnels down exactly to the shoulder plane, and the
-# continuous cone takes over from there — sized so it clears the collar
-# thread roots by ≥1.2 mm.
-NOZZLE_THROAT_Z  = NOZZLE_SHOULDER_Z
-NOZZLE_THROAT_D  = SOCKET_BORE_D - 2 * (NOZZLE_SHOULDER_Z - NOZZLE_SKIRT_DEPTH)  # 7.3
-_INT_R_AT = lambda z: (NOZZLE_THROAT_D / 2
-                       - (NOZZLE_THROAT_D - NOZZLE_ORIFICE_D) / 2
-                       * (z - NOZZLE_THROAT_Z) / (NOZZLE_TIP_Z - NOZZLE_THROAT_Z))
-assert NOZZLE_COLLAR_MINOR_D / 2 - _INT_R_AT(NOZZLE_COLLAR_Z0) >= 1.2, \
+# ── Dispenser above the shoulder (IDENTICAL for every variant) ───────────────
+# All z's here are RELATIVE to the flat shoulder plane (= the cap's seat).
+# Interior: ONE continuous cone from the Ø7.3 throat at the shoulder plane to
+# the Ø0.8 orifice — no mid-channel kink. (It can't start at the full socket
+# bore: that would be wider than the Ø12.4 collar around it.)
+NOZZLE_THROAT_D    = 7.3                 # continuous cone base, AT the shoulder
+DISPENSER_H        = 34.5                # shoulder → tip
+NOZZLE_CONE_BASE_D = 10.0                # exterior cone base (clears Ø11 ridges)
+NOZZLE_TIP_OD      = 2.4                 # flat tip rim — 0.8 wall at the orifice
+NOZZLE_ORIFICE_D   = 0.8                 # minimum inner Ø, at the tip face
+_INT_R_AT = lambda dz: (NOZZLE_THROAT_D / 2
+                        - (NOZZLE_THROAT_D - NOZZLE_ORIFICE_D) / 2
+                        * dz / DISPENSER_H)
+assert NOZZLE_COLLAR_MINOR_D / 2 - _INT_R_AT(0.0) >= 1.2, \
     "collar wall too thin over the internal cone — shrink NOZZLE_THROAT_D"
-assert NOZZLE_CONE_BASE_D / 2 - _INT_R_AT(NOZZLE_CONE_Z0) >= 1.2, \
+assert NOZZLE_CONE_BASE_D / 2 - _INT_R_AT(NOZZLE_COLLAR_LEN) >= 1.2, \
     "cone-base wall too thin over the internal cone"
-assert NOZZLE_TIP_OD / 2 - _INT_R_AT(NOZZLE_TIP_Z) >= 0.75, "tip wall too thin"
+assert NOZZLE_TIP_OD / 2 - _INT_R_AT(DISPENSER_H) >= 0.75, "tip wall too thin"
 
-# ── Cap (cap.step) — screws onto the collar, mouth lands FLAT on the shoulder ─
-# A SHELL that follows what it caps: the exterior is the interior cavity
-# (which hugs the dispensing cone) offset by CAP_WALL, so the cap is conical
-# like the nozzle instead of a solid slug. The thread BOSS at the mouth and
-# the grip ribs grow outward from that shell where they need to.
-# Interior, mouth-up: nut thread section (nominal), a 45° neck-down, a taper
-# hugging the cone (+0.5/side), then a 45° SEAL POCKET the tip rim wedges
-# into, CAP_SEAL_PRELOAD past nominal — small enough that the plastic gives
-# and the mouth rim still closes flat on the shoulder.
+# ── Cap (cap.step, ONE for all variants) ─────────────────────────────────────
+# A 1.6 mm SHELL following the dispensing cone; thread boss + ribs grow
+# outward from it. Mouth rim lands flat on the shoulder while the tip rim
+# wedges CAP_SEAL_PRELOAD into the 45° pocket (plastic gives; both engage).
 CAP_WALL         = 1.6                   # shell thickness over the cavity
 CAP_BOSS_OD      = CAP_THREAD_MAJOR_D + 2 * CAP_WALL          # 16.2 thread boss
 CAP_NUT_H        = NOZZLE_COLLAR_LEN     # 6.0 — female thread band at the mouth
 CAP_SEAL_PRELOAD = 0.15                  # tip/pocket interpenetration at seat
 CAP_CONE_CLR     = 0.5                   # radial clearance around the dispensing cone
 CAP_TOP_FLAT_D   = 2.0                   # truncated top (no needle apex)
-CAP_SEAT_Z       = NOZZLE_SHOULDER_Z     # mouth plane = the flat shoulder, seated
 
 # ── Grip ribs (both pieces) ──────────────────────────────────────────────────
-# Vertical half-round ribs around the cylindrical sections — print cleanly
-# with the axis vertical. They start above the mouth chamfer and stop where
-# the exterior turns conical (rib tops are up-facing there).
 GRIP_RIB_D  = 1.2                        # rib Ø (protrudes ~0.6)
 GRIP_RIB_Z0 = 0.8                        # above the 0.6 mouth chamfer
-NOZZLE_RIB_N = 20                        # around the Ø20.5 skirt (~3.2 mm spacing)
-CAP_RIB_N    = 16                        # around the Ø18 shell
+NOZZLE_RIB_N = 20                        # around the skirt
+CAP_RIB_N    = 16                        # around the thread boss
 
 # ── Assembly viz ─────────────────────────────────────────────────────────────
-CAP_EXPLODE_Z = NOZZLE_TIP_Z + 10.0      # cap floats above the nozzle tip
 COUNTER_Z = 115.0                        # build number float height
 
-# ── Invariants ───────────────────────────────────────────────────────────────
-assert SOCKET_RIDGE_TIP_D < SOCKET_BORE_D, "thread height must be positive"
-assert SOCKET_BORE_D > BOTTLE_MAJOR_D, "bore must clear the male crest"
-# (Ridge-vs-male-flank checks retired: BOTTLE_MAJOR/MINOR_D are stale — the v1
-# coupon proved them undersized. Re-add once the neck is re-measured.)
+# ── Per-variant invariants ───────────────────────────────────────────────────
+for _b in BOTTLES:
+    assert _b.ridge_tip_d < _b.bore_d, f"{_b.name}: thread height must be positive"
+    assert _b.socket_turns >= 2, f"{_b.name}: too shallow for 2 socket turns"
+    assert SOCKET_ENTRY_LEAD + _b.socket_turns * _b.pitch < _b.skirt_depth, \
+        f"{_b.name}: socket thread must end inside the skirt"
+    assert _b.bore_d > NOZZLE_THROAT_D, f"{_b.name}: bore narrower than the throat"

@@ -1,15 +1,18 @@
-"""The nozzle — screws onto the bottle, dispenses through a 50 mm cone.
+"""The nozzle — screws onto the bottle, dispenses through a ~35 mm cone.
+Built per BottleSpec: the macbeath and loctite variants differ ONLY in the
+skirt (socket bore/pitch/depth → skirt Ø and shoulder height); everything
+above the flat shoulder is identical, so one cap fits every variant.
 
-Bottom-up: ribbed threaded skirt (the print-validated bottle socket) running
-up to a FLAT annular shoulder — the cap's flat mouth rim lands on it for a
-clean flat contact — then the QUARTER-TURN male collar (4-start, 16 mm lead,
-src/quick_thread.py), then the dispensing cone (Ø10 → Ø3) up to z=50.
+Bottom-up: ribbed threaded skirt (the spec's bottle socket) running up to a
+FLAT annular shoulder — the cap's flat mouth rim lands on it for a clean
+flat contact — then the HALF-TURN male collar (2-start, 8 mm lead,
+cadkit.threads multistart), then the dispensing cone up to the tip.
 
-Inside, above the socket: the 45° ceiling funnels to the Ø8 throat just past
-the shoulder plane, and from there ONE continuous cone (~6°) runs unbroken
-through the collar and the whole dispenser to the Ø0.8 orifice — no
-mid-channel kink. (A single cone from the full Ø15.3 bore is impossible:
-it would still be Ø7+ inside the Ø12.4 collar.)
+Inside, above the socket: the 45° ceiling funnels to the shared Ø7.3 throat
+exactly at the shoulder plane, and from there ONE continuous cone (~6°) runs
+unbroken through the collar and the whole dispenser to the Ø0.8 orifice —
+no mid-channel kink. (A single cone from the full socket bore is impossible:
+it would be wider than the Ø12.4 collar around it.)
 
 Boolean order (THREADS_README rules): the whole exterior is built SMOOTH
 first (ribs included), the plain internal cone is cut while everything is
@@ -33,52 +36,46 @@ from .dimensions import (
     NOZZLE_COLLAR_LEN,
     NOZZLE_COLLAR_MAJOR_D,
     NOZZLE_COLLAR_MINOR_D,
-    NOZZLE_COLLAR_Z0,
     NOZZLE_CONE_BASE_D,
-    NOZZLE_CONE_Z0,
     NOZZLE_ORIFICE_D,
     NOZZLE_RIB_N,
-    NOZZLE_SHOULDER_Z,
-    NOZZLE_SKIRT_DEPTH,
-    NOZZLE_SKIRT_OD,
-    NOZZLE_SOCKET_TURNS,
     NOZZLE_THROAT_D,
-    NOZZLE_THROAT_Z,
     NOZZLE_TIP_OD,
-    NOZZLE_TIP_Z,
 )
 from .grip import add_grip_ribs
 from .thread_socket import _cone, _cyl, socket_cutter
 
 
-def build_nozzle():
+def build_nozzle(spec):
+    shoulder = spec.shoulder_z
+    cone_z0 = shoulder + NOZZLE_COLLAR_LEN
+    tip_z = spec.tip_z
+
     # Smooth blank: skirt up to the FLAT shoulder → collar (crest Ø) → cone.
-    body = _cyl(NOZZLE_SKIRT_OD, NOZZLE_SHOULDER_Z)
-    body = body.union(_cyl(NOZZLE_COLLAR_MAJOR_D, NOZZLE_COLLAR_LEN,
-                           z=NOZZLE_COLLAR_Z0))
+    body = _cyl(spec.skirt_od, shoulder)
+    body = body.union(_cyl(NOZZLE_COLLAR_MAJOR_D, NOZZLE_COLLAR_LEN, z=shoulder))
     body = body.union(_cone(NOZZLE_CONE_BASE_D, NOZZLE_TIP_OD,
-                            NOZZLE_TIP_Z - NOZZLE_CONE_Z0, NOZZLE_CONE_Z0))
-    body = add_grip_ribs(body, NOZZLE_SKIRT_OD, NOZZLE_RIB_N,
-                         GRIP_RIB_Z0, NOZZLE_SHOULDER_Z - GRIP_RIB_Z0)
+                            tip_z - cone_z0, cone_z0))
+    body = add_grip_ribs(body, spec.skirt_od, NOZZLE_RIB_N,
+                         GRIP_RIB_Z0, shoulder - GRIP_RIB_Z0)
     # Mouth-edge chamfer while smooth (chamfer → cut, never after).
     body = body.edges("<Z").chamfer(0.6)
 
-    # The continuous internal cone — Ø8 throat to the Ø0.8 orifice — plus a
-    # short orifice overshoot through the tip face (dodges the coincident
-    # face). The socket ceiling cut below overlaps it seamlessly at the
-    # throat: the 45° funnel is wider below NOZZLE_THROAT_Z, this cone above.
+    # The continuous internal cone — Ø7.3 throat at the shoulder plane to the
+    # Ø0.8 orifice — plus a short orifice overshoot through the tip face
+    # (dodges the coincident face). The socket ceiling cut below overlaps it
+    # seamlessly: the 45° funnel is wider below the shoulder, this cone above.
     body = body.cut(_cone(NOZZLE_THROAT_D, NOZZLE_ORIFICE_D,
-                          NOZZLE_TIP_Z - NOZZLE_THROAT_Z, NOZZLE_THROAT_Z))
-    body = body.cut(_cyl(NOZZLE_ORIFICE_D, 1.5, z=NOZZLE_TIP_Z - 0.5))
+                          tip_z - shoulder, shoulder))
+    body = body.cut(_cyl(NOZZLE_ORIFICE_D, 1.5, z=tip_z - 0.5))
 
-    # Threads LAST. Quarter-turn collar valleys first (the blank is still
+    # Threads LAST. Half-turn collar valleys first (the blank is still
     # cheap), then the bottle socket (its ceiling cone tops out below the
     # collar valleys' radius, so the two cuts never overlap).
     body = cut_multistart_thread(body, NOZZLE_COLLAR_MINOR_D,
                                  NOZZLE_COLLAR_MAJOR_D, CAP_THREAD_SPACING,
                                  CAP_THREAD_STARTS, NOZZLE_COLLAR_LEN,
-                                 z=NOZZLE_COLLAR_Z0)
-    body = body.cut(socket_cutter(NOZZLE_SKIRT_DEPTH, cone_ceiling=True,
-                                  turns=NOZZLE_SOCKET_TURNS),
+                                 z=shoulder)
+    body = body.cut(socket_cutter(spec, spec.skirt_depth, cone_ceiling=True),
                     clean=False)
     return body

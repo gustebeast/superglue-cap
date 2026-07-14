@@ -1,5 +1,8 @@
-"""The cap — quarter-turn onto the nozzle collar; a conical SHELL that
-follows the dispensing cone it caps at CAP_WALL thickness.
+"""The cap — a HALF TURN onto the nozzle collar; a conical SHELL that
+follows the dispensing cone it caps at CAP_WALL thickness. ONE cap fits
+every bottle variant: it lives entirely above the flat shoulder, and the
+dispenser stack there is identical for all of them (cap coords are relative
+to the shoulder plane, where its mouth seats).
 
 Exterior (one revolved profile, mouth-up): chamfered mouth → thread BOSS
 (Ø16.2 cylinder over the nut band — threads need wall, so the boss grows
@@ -35,24 +38,23 @@ from .dimensions import (
     CAP_THREAD_STARTS,
     CAP_TOP_FLAT_D,
     CAP_WALL,
+    DISPENSER_H,
     GRIP_RIB_Z0,
+    NOZZLE_COLLAR_LEN,
     NOZZLE_CONE_BASE_D,
-    NOZZLE_CONE_Z0,
-    NOZZLE_SHOULDER_Z,
     NOZZLE_TIP_OD,
-    NOZZLE_TIP_Z,
 )
 from .grip import add_grip_ribs
 from .thread_socket import _cone
 
-# ── Interior stack (cap coords: nozzle z minus NOZZLE_SHOULDER_Z) ────────────
+# ── Interior stack (cap coords: nozzle z minus the spec's shoulder_z) ────────
 NUT_Z0 = -0.5                                          # cutter overshoots the mouth
 NECK_Z0 = NUT_Z0 + CAP_NUT_H + 0.5                     # 6.0 — top of the nut band
 CAVITY_D0 = NOZZLE_CONE_BASE_D + 2 * CAP_CONE_CLR      # 11.0 cavity over the cone base
 NECK_H = (CAP_THREAD_MAJOR_D - CAVITY_D0) / 2.0        # 1.0 — 45° neck-down
 CAVITY_Z0 = NECK_Z0 + NECK_H                           # 7.0
 
-TIP_Z = NOZZLE_TIP_Z - NOZZLE_SHOULDER_Z               # 34.5 tip plane at seat
+TIP_Z = DISPENSER_H                                    # 34.5 tip plane at seat
 POCKET_D0 = NOZZLE_TIP_OD + 1.9                        # 4.3 pocket base Ø — wide
                                                        # enough that the cavity
                                                        # keeps clearing the cone
@@ -83,8 +85,8 @@ assert SHELL_END_R > TOP_FLAT_R, "top cone inverted"
 # The cavity taper must clear the dispensing cone all the way up.
 _cone_d_at = lambda zc: (NOZZLE_CONE_BASE_D
                          - (NOZZLE_CONE_BASE_D - NOZZLE_TIP_OD)
-                         * (zc - (NOZZLE_CONE_Z0 - NOZZLE_SHOULDER_Z))
-                         / (NOZZLE_TIP_Z - NOZZLE_CONE_Z0))
+                         * (zc - NOZZLE_COLLAR_LEN)
+                         / (DISPENSER_H - NOZZLE_COLLAR_LEN))
 _cavity_d_at = lambda zc: (CAVITY_D0
                            - (CAVITY_D0 - POCKET_D0) * (zc - CAVITY_Z0)
                            / (POCKET_Z0 - CAVITY_Z0))
@@ -109,8 +111,8 @@ def build_cap():
     body = body.cut(_cone(CAVITY_D0, POCKET_D0, POCKET_Z0 - CAVITY_Z0, CAVITY_Z0))
     body = body.cut(_cone(POCKET_D0, POCKET_TIP_D, POCKET_H, POCKET_Z0))
 
-    # Nut thread LAST: the quarter-turn cutter (cadkit.threads) at nominal
-    # size, overshot past the mouth; its entry bevel gives the lead-in chamfer.
+    # Nut thread LAST: the half-turn multistart cutter (cadkit.threads) at
+    # nominal size, overshot past the mouth; its entry bevel = lead-in chamfer.
     nut = multistart_rod(CAP_THREAD_MINOR_D, CAP_THREAD_MAJOR_D,
                          CAP_THREAD_SPACING, CAP_THREAD_STARTS,
                          CAP_NUT_H + 0.5, z=NUT_Z0)
