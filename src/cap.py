@@ -21,6 +21,8 @@ PRINT: mouth DOWN, axis vertical, no supports.
 
 import cadquery as cq
 
+from cadkit.threads import multistart_rod
+
 from .dimensions import (
     CAP_BOSS_OD,
     CAP_CONE_CLR,
@@ -28,6 +30,9 @@ from .dimensions import (
     CAP_RIB_N,
     CAP_SEAL_PRELOAD,
     CAP_THREAD_MAJOR_D,
+    CAP_THREAD_MINOR_D,
+    CAP_THREAD_SPACING,
+    CAP_THREAD_STARTS,
     CAP_TOP_FLAT_D,
     CAP_WALL,
     GRIP_RIB_Z0,
@@ -38,7 +43,6 @@ from .dimensions import (
     NOZZLE_TIP_Z,
 )
 from .grip import add_grip_ribs
-from .quick_thread import quick_nut_cutter
 from .thread_socket import _cone
 
 # ── Interior stack (cap coords: nozzle z minus NOZZLE_SHOULDER_Z) ────────────
@@ -105,7 +109,9 @@ def build_cap():
     body = body.cut(_cone(CAVITY_D0, POCKET_D0, POCKET_Z0 - CAVITY_Z0, CAVITY_Z0))
     body = body.cut(_cone(POCKET_D0, POCKET_TIP_D, POCKET_H, POCKET_Z0))
 
-    # Nut thread LAST: the quarter-turn cutter at nominal size, overshot past
-    # the mouth; its entry bevel gives the thread lead-in chamfer.
-    nut = quick_nut_cutter(CAP_NUT_H + 0.5, z=NUT_Z0)
+    # Nut thread LAST: the quarter-turn cutter (cadkit.threads) at nominal
+    # size, overshot past the mouth; its entry bevel gives the lead-in chamfer.
+    nut = multistart_rod(CAP_THREAD_MINOR_D, CAP_THREAD_MAJOR_D,
+                         CAP_THREAD_SPACING, CAP_THREAD_STARTS,
+                         CAP_NUT_H + 0.5, z=NUT_Z0)
     return body.cut(nut, clean=False)
