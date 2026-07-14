@@ -87,34 +87,43 @@ NOZZLE_COLLAR_MAJOR_D = CAP_THREAD_MAJOR_D - CAP_THREAD_CLR   # 12.4
 NOZZLE_COLLAR_MINOR_D = CAP_THREAD_MINOR_D - CAP_THREAD_CLR   # 10.4
 NOZZLE_COLLAR_LEN  = CAP_THREAD_TURNS * CAP_THREAD_PITCH      # 8.0
 
-# Nozzle stack z's (45° shoulder → collar → straight dispensing barrel).
-# The dispenser is a cone INSIDE only: the outside is a straight Ø8 barrel
-# whose flat tip face gives the cap a clean flat contact area (an outside
-# cone left an awkward tapered gap under the cap). Inside, the glue channel
-# is a long gentle cone from the throat down to a Ø0.8 orifice at the tip.
-NOZZLE_COLLAR_Z0 = NOZZLE_SKIRT_DEPTH + (NOZZLE_SKIRT_OD - NOZZLE_COLLAR_MAJOR_D) / 2  # 15.55
-NOZZLE_BARREL_Z0 = NOZZLE_COLLAR_Z0 + NOZZLE_COLLAR_LEN       # 23.55
-NOZZLE_BARREL_OD = 8.0                   # straight barrel; passes the cap's Ø11 ridges
-NOZZLE_BARREL_LEN = 13.0
-NOZZLE_TIP_Z     = NOZZLE_BARREL_Z0 + NOZZLE_BARREL_LEN       # 36.55
+# Nozzle stack z's (FLAT shoulder → collar → dispensing cone).
+# The skirt→collar transition is a FLAT annular step, not a cone: the cap's
+# flat mouth rim lands on it for a clean flat contact when fully screwed on
+# (a conical shoulder left an awkward gap under the cap rim). The step is
+# up-facing, so printability is unchanged. It sits high enough that the 45°
+# socket ceiling inside has narrowed clear of the collar wall.
+# The dispensing tip stays the standard cone (Ø9 → Ø4 over 13), with the
+# internal channel tapering from the Ø5 throat to a Ø0.8 orifice at the tip.
+NOZZLE_SHOULDER_Z = 15.0                 # flat shoulder plane — the cap's seat
+NOZZLE_COLLAR_Z0 = NOZZLE_SHOULDER_Z
+NOZZLE_CONE_Z0   = NOZZLE_COLLAR_Z0 + NOZZLE_COLLAR_LEN       # 23.0
+NOZZLE_CONE_BASE_D = 9.0                 # must pass under the cap's Ø11 ridge tips
+NOZZLE_TIP_OD      = 4.0                 # flat tip rim (the sealing edge)
+NOZZLE_CONE_LEN    = 13.0                # ~11° half-angle — standard glue-nozzle look
+NOZZLE_TIP_Z       = NOZZLE_CONE_Z0 + NOZZLE_CONE_LEN         # 36.0
 NOZZLE_THROAT_D  = 5.0                   # internal cone base (socket ceiling truncation)
 NOZZLE_ORIFICE_D = 0.8                   # minimum inner Ø, at the tip face
 # Where the 45° socket ceiling hands over to the internal dispensing cone:
 NOZZLE_THROAT_Z  = NOZZLE_SKIRT_DEPTH + (SOCKET_BORE_D - NOZZLE_THROAT_D) / 2  # 16.65
+# Socket ceiling radius at the shoulder plane — the collar wall must clear it.
+_CEIL_R_AT_SHOULDER = SOCKET_BORE_D / 2 - (NOZZLE_SHOULDER_Z - NOZZLE_SKIRT_DEPTH)  # 4.15
+assert NOZZLE_COLLAR_MINOR_D / 2 - _CEIL_R_AT_SHOULDER >= 1.0, \
+    "collar wall too thin over the socket ceiling — raise NOZZLE_SHOULDER_Z"
 
-# ── Cap (cap.step) — screws onto the collar, seals flat against the tip ─────
+# ── Cap (cap.step) — screws onto the collar, mouth lands FLAT on the shoulder ─
 # Interior, mouth-up: nut thread section (threaded_rod cutter, nominal), a 45°
-# neck-down, a snug cylindrical cavity around the straight barrel, then a
-# FLAT ceiling. The ceiling sits CAP_SEAL_PRELOAD short of where the barrel's
-# flat tip face lands at nominal seat, so screwing tight presses the two flat
-# faces together — a clean flat-on-flat seal, torque loads it directly.
-# (The Ø8.6 flat ceiling prints as a small bridge — fine at this span.)
+# neck-down, a taper hugging the dispensing cone (+0.5/side), then a 45°
+# conical SEAL POCKET for the tip rim. Fully screwed on, the cap's flat mouth
+# rim closes on the nozzle's flat shoulder (the clean contact area) while the
+# tip rim wedges CAP_SEAL_PRELOAD into the pocket — small enough that the
+# plastic gives and BOTH contacts engage.
 CAP_OD           = 18.0
 CAP_WALL_MIN     = (CAP_OD - CAP_THREAD_MAJOR_D) / 2          # 2.5 behind the nut
-CAP_SEAL_PRELOAD = 0.3                   # flat-on-flat interpenetration at seat
-CAP_BARREL_CLR   = 0.3                   # radial clearance around the barrel
+CAP_SEAL_PRELOAD = 0.15                  # tip/pocket interpenetration at seat
+CAP_CONE_CLR     = 0.5                   # radial clearance around the dispensing cone
 CAP_TOP_FLAT_D   = 5.0                   # truncated top (no needle apex)
-CAP_SEAT_Z       = NOZZLE_COLLAR_Z0      # nozzle-z of the cap mouth, fully seated
+CAP_SEAT_Z       = NOZZLE_SHOULDER_Z     # mouth plane = the flat shoulder, seated
 
 # ── Grip ribs (both pieces) ──────────────────────────────────────────────────
 # Vertical half-round ribs around the cylindrical sections — print cleanly

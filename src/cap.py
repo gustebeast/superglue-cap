@@ -1,23 +1,24 @@
-"""The cap — screws onto the nozzle's collar and seals flat against the tip.
+"""The cap — screws onto the nozzle's collar; its flat mouth rim lands on the
+nozzle's flat shoulder while the tip seals into a 45° pocket.
 
-Interior, mouth-up (z=0 at the mouth, = nozzle z NOZZLE_COLLAR_Z0 seated):
+Interior, mouth-up (z=0 at the mouth, = nozzle z NOZZLE_SHOULDER_Z seated):
   nut     female Ø13/Ø11 pitch-4 thread — cadkit.threads threaded_rod as the
           nut cutter at NOMINAL size (clearance lives on the male collar);
-  neck    45° narrowing from the thread bore to the barrel cavity;
-  cavity  snug cylinder around the straight barrel (CAP_BARREL_CLR per side);
-  ceiling FLAT, placed CAP_SEAL_PRELOAD short of where the barrel's flat tip
-          face lands at nominal seat — screwing tight presses the two flats
-          together, a clean flat-on-flat seal loaded by the thread torque.
+  neck    45° narrowing from the thread bore to the cone cavity;
+  cavity  taper hugging the dispensing cone at CAP_CONE_CLR per side;
+  pocket  45° cone the nozzle's Ø4 tip rim wedges into, CAP_SEAL_PRELOAD
+          (0.15) past nominal — small enough that the plastic gives and the
+          mouth rim still closes flat on the shoulder. Torque loads both.
 
-The Ø8.6 flat ceiling prints as a small bridge (fine at this span); every
-other down-facing interior surface is ≥45°. Ribbed outside for grip.
+All down-facing interior surfaces are ≥45°; the nut bore is the library's
+self-supporting profile. Ribbed outside for grip.
 PRINT: mouth DOWN, axis vertical, no supports.
 """
 
 from cadkit.threads import threaded_rod
 
 from .dimensions import (
-    CAP_BARREL_CLR,
+    CAP_CONE_CLR,
     CAP_OD,
     CAP_RIB_N,
     CAP_SEAL_PRELOAD,
@@ -27,35 +28,49 @@ from .dimensions import (
     CAP_THREAD_TURNS,
     CAP_TOP_FLAT_D,
     GRIP_RIB_Z0,
-    NOZZLE_BARREL_OD,
-    NOZZLE_COLLAR_Z0,
+    NOZZLE_CONE_BASE_D,
+    NOZZLE_CONE_LEN,
+    NOZZLE_CONE_Z0,
+    NOZZLE_SHOULDER_Z,
+    NOZZLE_TIP_OD,
     NOZZLE_TIP_Z,
 )
 from .grip import add_grip_ribs
 from .thread_socket import _cone, _cyl
 
-# ── Interior stack (cap coords: nozzle z minus NOZZLE_COLLAR_Z0) ─────────────
+# ── Interior stack (cap coords: nozzle z minus NOZZLE_SHOULDER_Z) ────────────
 NUT_H = CAP_THREAD_TURNS * CAP_THREAD_PITCH            # 8.0 thread section
 NUT_Z0 = -0.5                                          # rod overshoots the mouth
 NECK_Z0 = NUT_Z0 + NUT_H                               # 7.5 — top of the nut cutter
-CAVITY_D = NOZZLE_BARREL_OD + 2 * CAP_BARREL_CLR       # 8.6 around the barrel
-NECK_H = (CAP_THREAD_MAJOR_D - CAVITY_D) / 2.0         # 2.2 — 45° neck-down
-CAVITY_Z0 = NECK_Z0 + NECK_H                           # 9.7
+CAVITY_D0 = NOZZLE_CONE_BASE_D + 2 * CAP_CONE_CLR      # 10.0 cavity over the cone base
+NECK_H = (CAP_THREAD_MAJOR_D - CAVITY_D0) / 2.0        # 1.5 — 45° neck-down
+CAVITY_Z0 = NECK_Z0 + NECK_H                           # 9.0
 
-TIP_Z = NOZZLE_TIP_Z - NOZZLE_COLLAR_Z0                # 21.0 tip plane at seat
-CEILING_Z = TIP_Z - CAP_SEAL_PRELOAD                   # 20.7 flat sealing ceiling
+TIP_Z = NOZZLE_TIP_Z - NOZZLE_SHOULDER_Z               # 21.0 tip plane at seat
+POCKET_D0 = NOZZLE_TIP_OD + 1.0                        # 5.0 pocket base Ø
+POCKET_TIP_D = 0.8                                     # truncated pocket apex
+# Tip rim (Ø NOZZLE_TIP_OD) meets the 45° pocket half-way up; place that
+# contact circle CAP_SEAL_PRELOAD below the seated tip plane.
+POCKET_Z0 = TIP_Z - CAP_SEAL_PRELOAD - (POCKET_D0 - NOZZLE_TIP_OD) / 2.0   # 20.35
+POCKET_H = (POCKET_D0 - POCKET_TIP_D) / 2.0            # 2.1 — 45° cone
+POCKET_TOP_Z = POCKET_Z0 + POCKET_H                    # 22.45 interior ceiling
 
 # ── Exterior ─────────────────────────────────────────────────────────────────
-SHELL_CYL_H = 18.0                                     # cylinder, then 45° cone
+SHELL_CYL_H = 19.0                                     # cylinder, then 45° cone
 CAP_CONE_H = (CAP_OD - CAP_TOP_FLAT_D) / 2.0           # 6.5
-CAP_TOTAL_H = SHELL_CYL_H + CAP_CONE_H                 # 24.5
-assert CAP_TOTAL_H - CEILING_Z >= 1.5, "roof too thin above the sealing ceiling"
-# Wall at the ceiling corner: the 45° exterior cone must still be clear of
-# the cavity radius there.
-assert (CAP_OD / 2 - (CEILING_Z - SHELL_CYL_H)) - CAVITY_D / 2 >= 1.5, \
-    "shell too thin where the ceiling meets the top cone"
-# The barrel must slide through the nut's Ø11 ridge tips.
-assert NOZZLE_BARREL_OD <= CAP_THREAD_MINOR_D - 0.6, "barrel fouls the nut ridges"
+CAP_TOTAL_H = SHELL_CYL_H + CAP_CONE_H                 # 25.5
+assert CAP_TOTAL_H - POCKET_TOP_Z >= 1.0, "roof too thin above the seal pocket"
+
+# The cavity taper must clear the dispensing cone all the way up.
+_cone_d_at = lambda zc: (NOZZLE_CONE_BASE_D
+                         - (NOZZLE_CONE_BASE_D - NOZZLE_TIP_OD)
+                         * (zc - (NOZZLE_CONE_Z0 - NOZZLE_SHOULDER_Z)) / NOZZLE_CONE_LEN)
+_cavity_d_at = lambda zc: (CAVITY_D0
+                           - (CAVITY_D0 - POCKET_D0) * (zc - CAVITY_Z0)
+                           / (POCKET_Z0 - CAVITY_Z0))
+for _zc in (CAVITY_Z0, 12.0, 16.0, POCKET_Z0):
+    assert _cavity_d_at(_zc) > _cone_d_at(_zc) + 0.5, \
+        f"cap cavity pinches the dispensing cone at z={_zc}"
 
 
 def build_cap():
@@ -66,10 +81,10 @@ def build_cap():
     # Mouth-edge chamfer while smooth (chamfer → cut, never after).
     body = body.edges("<Z").chamfer(0.6)
 
-    # Smooth interior first: 45° neck-down, then the barrel cavity — its flat
-    # top face IS the sealing ceiling.
-    body = body.cut(_cone(CAP_THREAD_MAJOR_D, CAVITY_D, NECK_H, NECK_Z0))
-    body = body.cut(_cyl(CAVITY_D, CEILING_Z - CAVITY_Z0, z=CAVITY_Z0))
+    # Smooth interior first: neck-down, cone cavity, seal pocket.
+    body = body.cut(_cone(CAP_THREAD_MAJOR_D, CAVITY_D0, NECK_H, NECK_Z0))
+    body = body.cut(_cone(CAVITY_D0, POCKET_D0, POCKET_Z0 - CAVITY_Z0, CAVITY_Z0))
+    body = body.cut(_cone(POCKET_D0, POCKET_TIP_D, POCKET_H, POCKET_Z0))
 
     # Nut thread LAST: the library rod at nominal size, overshot past the
     # mouth; its baked-in end bevels give the thread entry chamfer.
