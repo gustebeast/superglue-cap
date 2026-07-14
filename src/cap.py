@@ -113,8 +113,10 @@ def build_cap():
     body = body.cut(_cone(POCKET_D0, POCKET_TIP_D, POCKET_H, POCKET_Z0))
 
     # Nut thread LAST: the half-turn multistart cutter (cadkit.threads) at
-    # nominal size, overshot past the mouth; its entry bevel = lead-in chamfer.
+    # nominal size, overshot past the mouth. bevel=0: no conical entry flare
+    # — the mouth face stays FLAT for bed contact (blunt thread starts are
+    # FDM practice anyway; the male's own run-in does the aligning).
     nut = multistart_rod(CAP_THREAD_MINOR_D, CAP_THREAD_MAJOR_D,
                          CAP_THREAD_SPACING, CAP_THREAD_STARTS,
-                         CAP_NUT_H + 0.5, z=NUT_Z0)
+                         CAP_NUT_H + 0.5, z=NUT_Z0, bevel=0)
     return body.cut(nut, clean=False)
