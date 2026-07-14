@@ -24,10 +24,15 @@ The Ø0.8 orifice prints on the small side at a 0.4 nozzle; clear it with a
 pin, or slice with the 0.2 nozzle for a crisp hole.
 """
 
+from cadkit.threads import cut_multistart_thread
+
 from .dimensions import (
+    CAP_THREAD_SPACING,
+    CAP_THREAD_STARTS,
     GRIP_RIB_Z0,
     NOZZLE_COLLAR_LEN,
     NOZZLE_COLLAR_MAJOR_D,
+    NOZZLE_COLLAR_MINOR_D,
     NOZZLE_COLLAR_Z0,
     NOZZLE_CONE_BASE_D,
     NOZZLE_CONE_Z0,
@@ -43,7 +48,6 @@ from .dimensions import (
     NOZZLE_TIP_Z,
 )
 from .grip import add_grip_ribs
-from .quick_thread import cut_male_quick_thread
 from .thread_socket import _cone, _cyl, socket_cutter
 
 
@@ -70,7 +74,10 @@ def build_nozzle():
     # Threads LAST. Quarter-turn collar valleys first (the blank is still
     # cheap), then the bottle socket (its ceiling cone tops out below the
     # collar valleys' radius, so the two cuts never overlap).
-    body = cut_male_quick_thread(body, NOZZLE_COLLAR_Z0)
+    body = cut_multistart_thread(body, NOZZLE_COLLAR_MINOR_D,
+                                 NOZZLE_COLLAR_MAJOR_D, CAP_THREAD_SPACING,
+                                 CAP_THREAD_STARTS, NOZZLE_COLLAR_LEN,
+                                 z=NOZZLE_COLLAR_Z0)
     body = body.cut(socket_cutter(NOZZLE_SKIRT_DEPTH, cone_ceiling=True,
                                   turns=NOZZLE_SOCKET_TURNS),
                     clean=False)

@@ -77,9 +77,9 @@ assert SOCKET_ENTRY_LEAD + NOZZLE_SOCKET_TURNS * BOTTLE_PITCH < NOZZLE_SKIRT_DEP
 # The cap seals in a 90° turn: 4 starts at LEAD 16 advance 4 mm per quarter
 # turn. The local cross-section is IDENTICAL to the print-proven Ø13/Ø11
 # pitch-4 profile (depth 1.0, 1.0 flats, 45° flanks, ridges 4 mm apart) —
-# only the helix steepens (~24° lead angle). cadkit.threads' public cutters
-# are single-start, so src/quick_thread.py composes the same valley-sweep
-# recipe (whole-turn sweeps, 4-pt quad, sequential clean=False cuts).
+# only the helix steepens (~24° lead angle). Cut with cadkit.threads'
+# multistart family (multistart_rod / cut_multistart_thread — upstreamed
+# from this project; see THREADS_README.md → multi-start section).
 # Clearance goes on the MALE side (shrink the screw, keep the nut nominal).
 CAP_THREAD_MAJOR_D = 13.0                # female nut nominal
 CAP_THREAD_MINOR_D = 11.0
