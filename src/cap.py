@@ -41,7 +41,10 @@ NECK_H = (CAP_THREAD_MAJOR_D - CAVITY_D0) / 2.0        # 1.0 — 45° neck-down
 CAVITY_Z0 = NECK_Z0 + NECK_H                           # 7.0
 
 TIP_Z = NOZZLE_TIP_Z - NOZZLE_SHOULDER_Z               # 35.0 tip plane at seat
-POCKET_D0 = NOZZLE_TIP_OD + 1.0                        # 4.0 pocket base Ø
+POCKET_D0 = NOZZLE_TIP_OD + 1.9                        # 4.3 pocket base Ø — wide
+                                                       # enough that the cavity
+                                                       # keeps clearing the cone
+                                                       # right up to the pocket
 POCKET_TIP_D = 0.8                                     # truncated pocket apex
 # Tip rim (Ø NOZZLE_TIP_OD) meets the 45° pocket half-way up; place that
 # contact circle CAP_SEAL_PRELOAD below the seated tip plane.
