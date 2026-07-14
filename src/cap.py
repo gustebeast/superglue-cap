@@ -4,7 +4,7 @@ every bottle variant: it lives entirely above the flat shoulder, and the
 dispenser stack there is identical for all of them (cap coords are relative
 to the shoulder plane, where its mouth seats).
 
-Exterior (one revolved profile, mouth-up): chamfered mouth → thread BOSS
+Exterior (one revolved profile, mouth-up): flat mouth face → thread BOSS
 (Ø16.2 cylinder over the nut band — threads need wall, so the boss grows
 outward from the shell) → 45° taper onto the SHELL CONE (= cavity + CAP_WALL,
 tracking the nozzle cone all the way up) → a top cone closing over the seal
@@ -96,9 +96,10 @@ for _zc in (CAVITY_Z0, 15.0, 25.0, POCKET_Z0):
 
 
 def build_cap():
-    # One revolved profile: mouth chamfer, boss, 45° blend, shell cone
-    # tracking the cavity, top cone to a small flat. (x = radius, y = z.)
-    prof = [(BOSS_R - 0.6, 0.0), (BOSS_R, 0.6), (BOSS_R, BOSS_TOP),
+    # One revolved profile: FLAT mouth face (bed adhesion — no bottom
+    # chamfer; elephant's foot is the slicer's job), boss, 45° blend, shell
+    # cone tracking the cavity, top cone to a small flat. (x = radius, y = z.)
+    prof = [(BOSS_R, 0.0), (BOSS_R, BOSS_TOP),
             (JOIN_R, JOIN_Z), (SHELL_END_R, POCKET_Z0),
             (TOP_FLAT_R, TOP_Z), (0.0, TOP_Z), (0.0, 0.0)]
     body = (cq.Workplane("XZ").polyline(prof).close()

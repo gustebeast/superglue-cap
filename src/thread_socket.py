@@ -127,8 +127,9 @@ def build_socket_coupon(spec):
     up, the 15° ridge tops become unprintable overhangs.
     """
     body = _cyl(spec.bore_d + 2 * SOCKET_WALL, spec.coupon_h)
-    # Outer grip chamfers BEFORE the thread boolean (fillet/chamfer → cut).
-    body = body.edges().chamfer(0.6)
+    # Top-edge chamfer only, BEFORE the thread boolean (chamfer → cut). The
+    # bottom face stays FLAT — it's the bed-contact ring.
+    body = body.edges(">Z").chamfer(0.6)
     return body.cut(socket_cutter(spec, spec.coupon_h, over_hi=_END_OVER,
                                   turns=spec.coupon_turns), clean=False)
 

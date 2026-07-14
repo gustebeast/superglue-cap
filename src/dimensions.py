@@ -141,7 +141,9 @@ CAP_TOP_FLAT_D   = 2.0                   # truncated top (no needle apex)
 
 # ── Grip ribs (both pieces) ──────────────────────────────────────────────────
 GRIP_RIB_D  = 1.2                        # rib Ø (protrudes ~0.6)
-GRIP_RIB_Z0 = 0.8                        # above the 0.6 mouth chamfer
+GRIP_RIB_Z0 = 0.0                        # ribs start ON the bed: extra first-layer
+                                         # area (mouth faces are FLAT — no bottom
+                                         # chamfer; use slicer elephant-foot comp)
 NOZZLE_RIB_N = 20                        # around the skirt
 CAP_RIB_N    = 16                        # around the thread boss
 

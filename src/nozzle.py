@@ -56,10 +56,10 @@ def build_nozzle(spec):
     body = body.union(_cyl(NOZZLE_COLLAR_MAJOR_D, NOZZLE_COLLAR_LEN, z=shoulder))
     body = body.union(_cone(NOZZLE_CONE_BASE_D, NOZZLE_TIP_OD,
                             tip_z - cone_z0, cone_z0))
+    # Ribs run to the bed and the mouth face stays FLAT (no bottom chamfer)
+    # — maximum first-layer area; elephant's foot is the slicer's job.
     body = add_grip_ribs(body, spec.skirt_od, NOZZLE_RIB_N,
                          GRIP_RIB_Z0, shoulder - GRIP_RIB_Z0)
-    # Mouth-edge chamfer while smooth (chamfer → cut, never after).
-    body = body.edges("<Z").chamfer(0.6)
 
     # The continuous internal cone — Ø7.3 throat at the shoulder plane to the
     # Ø0.8 orifice — plus a short orifice overshoot through the tip face
