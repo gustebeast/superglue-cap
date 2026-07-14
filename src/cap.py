@@ -1,74 +1,69 @@
-"""The cap — screws onto the nozzle's collar; its flat mouth rim lands on the
+"""The cap — quarter-turn onto the nozzle collar; flat mouth rim lands on the
 nozzle's flat shoulder while the tip seals into a 45° pocket.
 
 Interior, mouth-up (z=0 at the mouth, = nozzle z NOZZLE_SHOULDER_Z seated):
-  nut     female Ø13/Ø11 pitch-4 thread — cadkit.threads threaded_rod as the
-          nut cutter at NOMINAL size (clearance lives on the male collar);
+  nut     female 4-start quarter-turn thread (src/quick_thread.py cutter at
+          NOMINAL Ø13/Ø11 — clearance lives on the male collar);
   neck    45° narrowing from the thread bore to the cone cavity;
-  cavity  taper hugging the dispensing cone at CAP_CONE_CLR per side;
-  pocket  45° cone the nozzle's Ø4 tip rim wedges into, CAP_SEAL_PRELOAD
+  cavity  taper hugging the 50 mm dispensing cone at CAP_CONE_CLR per side;
+  pocket  45° cone the nozzle's Ø3 tip rim wedges into, CAP_SEAL_PRELOAD
           (0.15) past nominal — small enough that the plastic gives and the
           mouth rim still closes flat on the shoulder. Torque loads both.
 
-All down-facing interior surfaces are ≥45°; the nut bore is the library's
-self-supporting profile. Ribbed outside for grip.
+All down-facing interior surfaces are ≥45°. Ribbed outside for grip.
 PRINT: mouth DOWN, axis vertical, no supports.
 """
 
-from cadkit.threads import threaded_rod
-
 from .dimensions import (
     CAP_CONE_CLR,
+    CAP_NUT_H,
     CAP_OD,
     CAP_RIB_N,
     CAP_SEAL_PRELOAD,
     CAP_THREAD_MAJOR_D,
-    CAP_THREAD_MINOR_D,
-    CAP_THREAD_PITCH,
-    CAP_THREAD_TURNS,
     CAP_TOP_FLAT_D,
     GRIP_RIB_Z0,
     NOZZLE_CONE_BASE_D,
-    NOZZLE_CONE_LEN,
     NOZZLE_CONE_Z0,
     NOZZLE_SHOULDER_Z,
     NOZZLE_TIP_OD,
     NOZZLE_TIP_Z,
 )
 from .grip import add_grip_ribs
+from .quick_thread import quick_nut_cutter
 from .thread_socket import _cone, _cyl
 
 # ── Interior stack (cap coords: nozzle z minus NOZZLE_SHOULDER_Z) ────────────
-NUT_H = CAP_THREAD_TURNS * CAP_THREAD_PITCH            # 8.0 thread section
-NUT_Z0 = -0.5                                          # rod overshoots the mouth
-NECK_Z0 = NUT_Z0 + NUT_H                               # 7.5 — top of the nut cutter
-CAVITY_D0 = NOZZLE_CONE_BASE_D + 2 * CAP_CONE_CLR      # 10.0 cavity over the cone base
-NECK_H = (CAP_THREAD_MAJOR_D - CAVITY_D0) / 2.0        # 1.5 — 45° neck-down
-CAVITY_Z0 = NECK_Z0 + NECK_H                           # 9.0
+NUT_Z0 = -0.5                                          # cutter overshoots the mouth
+NECK_Z0 = NUT_Z0 + CAP_NUT_H + 0.5                     # 6.0 — top of the nut band
+CAVITY_D0 = NOZZLE_CONE_BASE_D + 2 * CAP_CONE_CLR      # 11.0 cavity over the cone base
+NECK_H = (CAP_THREAD_MAJOR_D - CAVITY_D0) / 2.0        # 1.0 — 45° neck-down
+CAVITY_Z0 = NECK_Z0 + NECK_H                           # 7.0
 
-TIP_Z = NOZZLE_TIP_Z - NOZZLE_SHOULDER_Z               # 21.0 tip plane at seat
-POCKET_D0 = NOZZLE_TIP_OD + 1.0                        # 5.0 pocket base Ø
+TIP_Z = NOZZLE_TIP_Z - NOZZLE_SHOULDER_Z               # 35.0 tip plane at seat
+POCKET_D0 = NOZZLE_TIP_OD + 1.0                        # 4.0 pocket base Ø
 POCKET_TIP_D = 0.8                                     # truncated pocket apex
 # Tip rim (Ø NOZZLE_TIP_OD) meets the 45° pocket half-way up; place that
 # contact circle CAP_SEAL_PRELOAD below the seated tip plane.
-POCKET_Z0 = TIP_Z - CAP_SEAL_PRELOAD - (POCKET_D0 - NOZZLE_TIP_OD) / 2.0   # 20.35
-POCKET_H = (POCKET_D0 - POCKET_TIP_D) / 2.0            # 2.1 — 45° cone
-POCKET_TOP_Z = POCKET_Z0 + POCKET_H                    # 22.45 interior ceiling
+POCKET_Z0 = TIP_Z - CAP_SEAL_PRELOAD - (POCKET_D0 - NOZZLE_TIP_OD) / 2.0   # 34.35
+POCKET_H = (POCKET_D0 - POCKET_TIP_D) / 2.0            # 1.6 — 45° cone
+POCKET_TOP_Z = POCKET_Z0 + POCKET_H                    # 35.95 interior ceiling
 
 # ── Exterior ─────────────────────────────────────────────────────────────────
-SHELL_CYL_H = 19.0                                     # cylinder, then 45° cone
+SHELL_CYL_H = 33.0                                     # cylinder, then 45° cone
 CAP_CONE_H = (CAP_OD - CAP_TOP_FLAT_D) / 2.0           # 6.5
-CAP_TOTAL_H = SHELL_CYL_H + CAP_CONE_H                 # 25.5
+CAP_TOTAL_H = SHELL_CYL_H + CAP_CONE_H                 # 39.5
 assert CAP_TOTAL_H - POCKET_TOP_Z >= 1.0, "roof too thin above the seal pocket"
 
 # The cavity taper must clear the dispensing cone all the way up.
 _cone_d_at = lambda zc: (NOZZLE_CONE_BASE_D
                          - (NOZZLE_CONE_BASE_D - NOZZLE_TIP_OD)
-                         * (zc - (NOZZLE_CONE_Z0 - NOZZLE_SHOULDER_Z)) / NOZZLE_CONE_LEN)
+                         * (zc - (NOZZLE_CONE_Z0 - NOZZLE_SHOULDER_Z))
+                         / (NOZZLE_TIP_Z - NOZZLE_CONE_Z0))
 _cavity_d_at = lambda zc: (CAVITY_D0
                            - (CAVITY_D0 - POCKET_D0) * (zc - CAVITY_Z0)
                            / (POCKET_Z0 - CAVITY_Z0))
-for _zc in (CAVITY_Z0, 12.0, 16.0, POCKET_Z0):
+for _zc in (CAVITY_Z0, 15.0, 25.0, POCKET_Z0):
     assert _cavity_d_at(_zc) > _cone_d_at(_zc) + 0.5, \
         f"cap cavity pinches the dispensing cone at z={_zc}"
 
@@ -86,8 +81,7 @@ def build_cap():
     body = body.cut(_cone(CAVITY_D0, POCKET_D0, POCKET_Z0 - CAVITY_Z0, CAVITY_Z0))
     body = body.cut(_cone(POCKET_D0, POCKET_TIP_D, POCKET_H, POCKET_Z0))
 
-    # Nut thread LAST: the library rod at nominal size, overshot past the
-    # mouth; its baked-in end bevels give the thread entry chamfer.
-    nut = threaded_rod(minor_d=CAP_THREAD_MINOR_D, major_d=CAP_THREAD_MAJOR_D,
-                       pitch=CAP_THREAD_PITCH, length=NUT_H, z=NUT_Z0)
+    # Nut thread LAST: the quarter-turn cutter at nominal size, overshot past
+    # the mouth; its entry bevel gives the thread lead-in chamfer.
+    nut = quick_nut_cutter(CAP_NUT_H + 0.5, z=NUT_Z0)
     return body.cut(nut, clean=False)

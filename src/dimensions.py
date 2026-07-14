@@ -73,19 +73,23 @@ NOZZLE_SKIRT_OD    = SOCKET_BORE_D + 2 * SOCKET_WALL   # 20.5
 NOZZLE_SOCKET_TURNS = int((NOZZLE_SKIRT_DEPTH - SOCKET_ENTRY_LEAD) // BOTTLE_PITCH)  # 5
 assert SOCKET_ENTRY_LEAD + NOZZLE_SOCKET_TURNS * BOTTLE_PITCH < NOZZLE_SKIRT_DEPTH
 
-# ── Nozzle ↔ cap thread — cadkit.threads, the print-proven Ø13/Ø11 pitch 4 ──
-# Symmetric 45° self-supporting profile (depth 1.0, 1.0 flats). Clearance
-# goes on the MALE side (THREADS_README tip: shrink the screw, keep the nut
-# cutter nominal) — 0.6 diametral to start at a 0.4 nozzle (the tested 0.8 mm
-# was "a bit loose" at an 0.8 nozzle).
-CAP_THREAD_MAJOR_D = 13.0                # female nut nominal (threaded_rod cutter)
+# ── Nozzle ↔ cap thread — QUARTER-TURN (4-start, 16 mm lead) ─────────────────
+# The cap seals in a 90° turn: 4 starts at LEAD 16 advance 4 mm per quarter
+# turn. The local cross-section is IDENTICAL to the print-proven Ø13/Ø11
+# pitch-4 profile (depth 1.0, 1.0 flats, 45° flanks, ridges 4 mm apart) —
+# only the helix steepens (~24° lead angle). cadkit.threads' public cutters
+# are single-start, so src/quick_thread.py composes the same valley-sweep
+# recipe (whole-turn sweeps, 4-pt quad, sequential clean=False cuts).
+# Clearance goes on the MALE side (shrink the screw, keep the nut nominal).
+CAP_THREAD_MAJOR_D = 13.0                # female nut nominal
 CAP_THREAD_MINOR_D = 11.0
-CAP_THREAD_PITCH   = 4.0
-CAP_THREAD_TURNS   = 2                   # 8 mm of engagement — cap seats in 2 turns
+CAP_THREAD_LEAD    = 16.0                # mm advance per full turn
+CAP_THREAD_STARTS  = 4
+CAP_THREAD_SPACING = CAP_THREAD_LEAD / CAP_THREAD_STARTS      # 4.0 ridge spacing
 CAP_THREAD_CLR     = 0.6                 # diametral, off the male collar
 NOZZLE_COLLAR_MAJOR_D = CAP_THREAD_MAJOR_D - CAP_THREAD_CLR   # 12.4
 NOZZLE_COLLAR_MINOR_D = CAP_THREAD_MINOR_D - CAP_THREAD_CLR   # 10.4
-NOZZLE_COLLAR_LEN  = CAP_THREAD_TURNS * CAP_THREAD_PITCH      # 8.0
+NOZZLE_COLLAR_LEN  = 6.0                 # 1.5 ridge spacings of engagement
 
 # Nozzle stack z's (FLAT shoulder → collar → dispensing cone).
 # The skirt→collar transition is a FLAT annular step, not a cone: the cap's
@@ -95,21 +99,29 @@ NOZZLE_COLLAR_LEN  = CAP_THREAD_TURNS * CAP_THREAD_PITCH      # 8.0
 # socket ceiling inside has narrowed clear of the collar wall.
 # The dispensing tip stays the standard cone (Ø9 → Ø4 over 13), with the
 # internal channel tapering from the Ø5 throat to a Ø0.8 orifice at the tip.
-NOZZLE_SHOULDER_Z = 15.0                 # flat shoulder plane — the cap's seat
+NOZZLE_SHOULDER_Z = 15.5                 # flat shoulder plane — the cap's seat
 NOZZLE_COLLAR_Z0 = NOZZLE_SHOULDER_Z
-NOZZLE_CONE_Z0   = NOZZLE_COLLAR_Z0 + NOZZLE_COLLAR_LEN       # 23.0
-NOZZLE_CONE_BASE_D = 9.0                 # must pass under the cap's Ø11 ridge tips
-NOZZLE_TIP_OD      = 4.0                 # flat tip rim (the sealing edge)
-NOZZLE_CONE_LEN    = 13.0                # ~11° half-angle — standard glue-nozzle look
-NOZZLE_TIP_Z       = NOZZLE_CONE_Z0 + NOZZLE_CONE_LEN         # 36.0
-NOZZLE_THROAT_D  = 5.0                   # internal cone base (socket ceiling truncation)
+NOZZLE_CONE_Z0   = NOZZLE_COLLAR_Z0 + NOZZLE_COLLAR_LEN       # 21.0
+NOZZLE_TIP_Z     = 50.0                  # total dispenser height (user spec)
+NOZZLE_CONE_BASE_D = 10.0                # must pass under the cap's Ø11 ridge tips
+NOZZLE_TIP_OD      = 3.0                 # flat tip rim (the sealing edge)
 NOZZLE_ORIFICE_D = 0.8                   # minimum inner Ø, at the tip face
-# Where the 45° socket ceiling hands over to the internal dispensing cone:
-NOZZLE_THROAT_Z  = NOZZLE_SKIRT_DEPTH + (SOCKET_BORE_D - NOZZLE_THROAT_D) / 2  # 16.65
-# Socket ceiling radius at the shoulder plane — the collar wall must clear it.
-_CEIL_R_AT_SHOULDER = SOCKET_BORE_D / 2 - (NOZZLE_SHOULDER_Z - NOZZLE_SKIRT_DEPTH)  # 4.15
-assert NOZZLE_COLLAR_MINOR_D / 2 - _CEIL_R_AT_SHOULDER >= 1.0, \
-    "collar wall too thin over the socket ceiling — raise NOZZLE_SHOULDER_Z"
+# Interior: ONE continuous cone from the shoulder plane to the orifice. A
+# single cone can't start at the full socket bore (Ø15.3 at z=11.5 would
+# still be Ø7+ inside the Ø12.4 collar — fatter than the collar), so the 45°
+# socket ceiling funnels down exactly to the shoulder plane, and the
+# continuous cone takes over from there — sized so it clears the collar
+# thread roots by ≥1.2 mm.
+NOZZLE_THROAT_Z  = NOZZLE_SHOULDER_Z
+NOZZLE_THROAT_D  = SOCKET_BORE_D - 2 * (NOZZLE_SHOULDER_Z - NOZZLE_SKIRT_DEPTH)  # 7.3
+_INT_R_AT = lambda z: (NOZZLE_THROAT_D / 2
+                       - (NOZZLE_THROAT_D - NOZZLE_ORIFICE_D) / 2
+                       * (z - NOZZLE_THROAT_Z) / (NOZZLE_TIP_Z - NOZZLE_THROAT_Z))
+assert NOZZLE_COLLAR_MINOR_D / 2 - _INT_R_AT(NOZZLE_COLLAR_Z0) >= 1.2, \
+    "collar wall too thin over the internal cone — shrink NOZZLE_THROAT_D"
+assert NOZZLE_CONE_BASE_D / 2 - _INT_R_AT(NOZZLE_CONE_Z0) >= 1.2, \
+    "cone-base wall too thin over the internal cone"
+assert NOZZLE_TIP_OD / 2 - _INT_R_AT(NOZZLE_TIP_Z) >= 0.9, "tip wall too thin"
 
 # ── Cap (cap.step) — screws onto the collar, mouth lands FLAT on the shoulder ─
 # Interior, mouth-up: nut thread section (threaded_rod cutter, nominal), a 45°
@@ -120,6 +132,7 @@ assert NOZZLE_COLLAR_MINOR_D / 2 - _CEIL_R_AT_SHOULDER >= 1.0, \
 # plastic gives and BOTH contacts engage.
 CAP_OD           = 18.0
 CAP_WALL_MIN     = (CAP_OD - CAP_THREAD_MAJOR_D) / 2          # 2.5 behind the nut
+CAP_NUT_H        = NOZZLE_COLLAR_LEN     # 6.0 — female thread band at the mouth
 CAP_SEAL_PRELOAD = 0.15                  # tip/pocket interpenetration at seat
 CAP_CONE_CLR     = 0.5                   # radial clearance around the dispensing cone
 CAP_TOP_FLAT_D   = 5.0                   # truncated top (no needle apex)
@@ -136,7 +149,7 @@ CAP_RIB_N    = 16                        # around the Ø18 shell
 
 # ── Assembly viz ─────────────────────────────────────────────────────────────
 CAP_EXPLODE_Z = NOZZLE_TIP_Z + 10.0      # cap floats above the nozzle tip
-COUNTER_Z = 85.0                         # build number float height
+COUNTER_Z = 115.0                        # build number float height
 
 # ── Invariants ───────────────────────────────────────────────────────────────
 assert SOCKET_RIDGE_TIP_D < SOCKET_BORE_D, "thread height must be positive"

@@ -60,14 +60,14 @@ socket_coupon = build_socket_coupon()
 # A silent OCCT helix failure looks like a clean part — always probe every
 # thread: the nozzle's bottle socket, its male collar, and the cap's nut.
 probe_socket_thread(nozzle, "nozzle socket", turns=NOZZLE_SOCKET_TURNS)
+# Quarter-turn bands are short (~1-2 ridge crossings per angle), so ≥2
+# transitions is the gate — still catches all-solid / all-void no-ops.
 probe_thread_band(nozzle, r=NOZZLE_COLLAR_MINOR_D / 2 + 0.15,
                   z0=NOZZLE_COLLAR_Z0 + 0.3,
                   z1=NOZZLE_COLLAR_Z0 + NOZZLE_COLLAR_LEN - 0.3,
-                  label="nozzle collar")
-# The nut cutter's end bevels fade the thread near the mouth/top, so probe
-# the middle band; ≥2 transitions still catches all-solid / all-void no-ops.
+                  label="nozzle collar", min_transitions=2)
 probe_thread_band(cap, r=CAP_THREAD_MINOR_D / 2 + 0.15,
-                  z0=1.0, z1=7.0, label="cap nut", min_transitions=2)
+                  z0=0.5, z1=5.5, label="cap nut", min_transitions=2)
 probe_socket_thread(socket_coupon, "socket_coupon")
 
 # Map of part name → (workplane, output filename, optional note).
