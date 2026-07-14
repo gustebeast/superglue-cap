@@ -104,7 +104,8 @@ NOZZLE_COLLAR_Z0 = NOZZLE_SHOULDER_Z
 NOZZLE_CONE_Z0   = NOZZLE_COLLAR_Z0 + NOZZLE_COLLAR_LEN       # 21.0
 NOZZLE_TIP_Z     = 50.0                  # total dispenser height (user spec)
 NOZZLE_CONE_BASE_D = 10.0                # must pass under the cap's Ø11 ridge tips
-NOZZLE_TIP_OD      = 3.0                 # flat tip rim (the sealing edge)
+NOZZLE_TIP_OD      = 2.4                 # flat tip rim (the sealing edge) — 0.8 wall
+                                         # around the Ø0.8 orifice (2 perimeters)
 NOZZLE_ORIFICE_D = 0.8                   # minimum inner Ø, at the tip face
 # Interior: ONE continuous cone from the shoulder plane to the orifice. A
 # single cone can't start at the full socket bore (Ø15.3 at z=11.5 would
@@ -121,7 +122,7 @@ assert NOZZLE_COLLAR_MINOR_D / 2 - _INT_R_AT(NOZZLE_COLLAR_Z0) >= 1.2, \
     "collar wall too thin over the internal cone — shrink NOZZLE_THROAT_D"
 assert NOZZLE_CONE_BASE_D / 2 - _INT_R_AT(NOZZLE_CONE_Z0) >= 1.2, \
     "cone-base wall too thin over the internal cone"
-assert NOZZLE_TIP_OD / 2 - _INT_R_AT(NOZZLE_TIP_Z) >= 0.9, "tip wall too thin"
+assert NOZZLE_TIP_OD / 2 - _INT_R_AT(NOZZLE_TIP_Z) >= 0.75, "tip wall too thin"
 
 # ── Cap (cap.step) — screws onto the collar, mouth lands FLAT on the shoulder ─
 # Interior, mouth-up: nut thread section (threaded_rod cutter, nominal), a 45°
