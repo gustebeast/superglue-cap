@@ -29,12 +29,10 @@ import cadquery as cq
 from .dimensions import (
     RIDGE_TIP_FLAT,
     RIDGE_TOP_SLOPE_DEG,
-    SOCKET_ENTRY_LEAD,
     SOCKET_MOUTH_CHAMFER,
+    SOCKET_VALLEY_OVERSHOOT as _OVERSHOOT,
     SOCKET_WALL,
 )
-
-_OVERSHOOT = 0.25        # radial overshoot of the valley past the blank crest
 _END_OVER = 0.5          # smooth-bore overshoot past the body faces (dodges
                          # coincident-face booleans, cuts only air)
 
@@ -88,8 +86,9 @@ def socket_cutter(spec, total_len, over_hi=_END_OVER, cone_ceiling=False,
                   turns=None):
     """The complete socket cutter for a body whose mouth face is at z=0 and
     which extends up to z=total_len: flared mouth + smooth entry bore + the
-    threaded band (`turns` WHOLE turns starting at SOCKET_ENTRY_LEAD;
-    default = the spec's full-skirt turn count). Subtract with clean=False.
+    threaded band (`turns` WHOLE turns starting at spec.entry_lead, which is
+    derived so the first ridge's underside reaches the wall ABOVE the mouth
+    chamfer; default turns = the spec's full-skirt count). clean=False.
 
     cone_ceiling=True makes a BLIND socket that closes as a 45° cone rising
     from the bore at z=total_len — the self-supporting ceiling for a nozzle
@@ -100,7 +99,7 @@ def socket_cutter(spec, total_len, over_hi=_END_OVER, cone_ceiling=False,
     """
     if turns is None:
         turns = spec.socket_turns
-    thread_top = SOCKET_ENTRY_LEAD + turns * spec.pitch
+    thread_top = spec.entry_lead + turns * spec.pitch
     assert thread_top < total_len, "thread must end inside the socket"
 
     if cone_ceiling:
@@ -116,7 +115,7 @@ def socket_cutter(spec, total_len, over_hi=_END_OVER, cone_ceiling=False,
         # width, so it slices as a point anyway.
         blank = blank.union(_cone(spec.bore_d, 0.2,
                                   (spec.bore_d - 0.2) / 2.0, total_len))
-    return blank.cut(_valley_sweep(spec, SOCKET_ENTRY_LEAD, turns), clean=False)
+    return blank.cut(_valley_sweep(spec, spec.entry_lead, turns), clean=False)
 
 
 def build_socket_coupon(spec):
@@ -177,6 +176,6 @@ def probe_socket_thread(wp, spec, turns=None, label=None):
     probe_thread_band(
         wp,
         r=spec.ridge_tip_d / 2.0 + 0.15,
-        z0=SOCKET_ENTRY_LEAD + 0.1,
-        z1=SOCKET_ENTRY_LEAD + turns * spec.pitch - 0.1,
+        z0=spec.entry_lead + 0.1,
+        z1=spec.entry_lead + turns * spec.pitch - 0.1,
         label=label or f"{spec.name} socket")
