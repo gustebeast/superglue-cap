@@ -100,3 +100,8 @@ loudly instead):
 - the **nozzle↔cap** joint uses `cadkit.threads`' multistart family
   (upstreamed from this project), the print-proven Ø13/Ø11 profile on two
   8 mm-lead helices.
+
+## License
+
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — models,
+code, and site.
