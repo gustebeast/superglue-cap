@@ -24,7 +24,27 @@ bottle-thread socket differs:
 | `macbeath` | Ø15.3 | Ø13.7 | 2 mm | 11.5 mm | print-validated |
 | `loctite`  | Ø18.0 | Ø16.0 | 3 mm | 11.0 mm | fit pending — print its coupon first |
 
-Adding a bottle = adding one `BottleSpec` line in `src/dimensions.py`.
+Adding a bottle = adding one `BottleSpec` line in `src/dimensions.py` — or
+just using the web generator below with your own measurements.
+
+## Web generator
+
+[`docs/`](docs/) is a browser-based generator (same idea as the
+[pantorouter template generator](https://github.com/gustebeast/pantorouter-template-generator)):
+measure your bottle's thread with calipers — the page has diagrams for each
+measurement — hit Generate, and download STEP/STL for a nozzle, cap, and
+test coupon matched to your bottle. All geometry is built locally in the
+browser via [replicad](https://replicad.xyz); nothing is uploaded. The JS
+geometry mirrors `src/` constant-for-constant — keep them in sync.
+
+To preview locally (a real HTTP server is needed for the WASM kernel):
+
+```sh
+py -3.12 -m http.server 8080 -d docs
+# open http://localhost:8080
+```
+
+To publish: enable GitHub Pages for the repo, source "main branch /docs".
 
 ## Printing
 

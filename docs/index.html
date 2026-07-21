@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Superglue Nozzle &amp; Cap Generator</title>
+  <link rel="stylesheet" href="style.css?v=1" />
+</head>
+<body>
+  <header>
+    <h1>Superglue Nozzle &amp; Cap Generator</h1>
+    <p class="subtitle">
+      Generates a replacement dispenser nozzle + half-turn sealing cap
+      matched to <em>your</em> superglue bottle's neck thread. Measure the
+      bottle with calipers, hit Generate, print. All geometry is built in
+      your browser — nothing is uploaded.
+    </p>
+  </header>
+
+  <main>
+    <section class="form-section">
+      <form id="params">
+        <fieldset>
+          <legend>Bottle thread measurements (mm)</legend>
+          <p class="hint">
+            Measure the bare bottle neck after pulling off the old
+            dispenser. Calipers set to mm; inches × 25.4 = mm.
+          </p>
+
+          <label>
+            Thread outer diameter — across the thread ridges
+            <svg class="diagram" viewBox="0 0 240 110" aria-label="Measure across the outermost thread ridges">
+              <path class="part" d="M85 10 v90 M155 10 v90" />
+              <path class="part" d="M85 22 l-8 5 8 5 M85 44 l-8 5 8 5 M85 66 l-8 5 8 5"/>
+              <path class="part" d="M155 22 l8 5 -8 5 M155 44 l8 5 -8 5 M155 66 l8 5 -8 5"/>
+              <path class="dim" d="M77 95 h86 M77 91 v8 M163 91 v8" />
+              <text class="dim-label" x="120" y="88" text-anchor="middle">outer Ø</text>
+            </svg>
+            <input type="number" id="threadOD" value="14.8" step="0.1" min="8" max="30" />
+          </label>
+
+          <label>
+            Thread root diameter — the neck between the ridges
+            <svg class="diagram" viewBox="0 0 240 110" aria-label="Measure the neck diameter between the thread ridges">
+              <path class="part" d="M85 10 v90 M155 10 v90" />
+              <path class="part" d="M85 22 l-8 5 8 5 M85 44 l-8 5 8 5 M85 66 l-8 5 8 5"/>
+              <path class="part" d="M155 22 l8 5 -8 5 M155 44 l8 5 -8 5 M155 66 l8 5 -8 5"/>
+              <path class="dim" d="M85 95 h70 M85 91 v8 M155 91 v8" />
+              <text class="dim-label" x="120" y="88" text-anchor="middle">root Ø</text>
+            </svg>
+            <input type="number" id="threadRootD" value="13.2" step="0.1" min="6" max="28" />
+          </label>
+
+          <label>
+            Thread pitch — ridge-to-ridge spacing
+            <span class="hint">
+              Tip: measure across several ridges and divide by the count
+              (3 ridges spanning 6&nbsp;mm → pitch 2&nbsp;mm).
+            </span>
+            <svg class="diagram" viewBox="0 0 240 110" aria-label="Measure the spacing between adjacent thread ridges">
+              <path class="part" d="M95 10 v90" />
+              <path class="part" d="M95 24 l-10 6 10 6 M95 48 l-10 6 10 6 M95 72 l-10 6 10 6"/>
+              <path class="dim" d="M110 30 v24 M106 30 h8 M106 54 h8" />
+              <text class="dim-label" x="120" y="46">pitch</text>
+            </svg>
+            <input type="number" id="pitch" value="2.0" step="0.1" min="1" max="6" />
+          </label>
+
+          <label>
+            Cap depth — how deep the neck sits in the old cap
+            <span class="hint">
+              Depth of the old cap's threaded pocket (or the length of the
+              threaded part of the neck). This is how far the bottle screws
+              into the new nozzle.
+            </span>
+            <svg class="diagram" viewBox="0 0 240 110" aria-label="Measure the old cap's internal depth">
+              <path class="part-fill" d="M70 20 h100 v70 h-14 v-56 h-72 v56 h-14 z" />
+              <path class="dim" d="M120 34 v56 M116 34 h8 M116 90 h8" />
+              <text class="dim-label" x="128" y="66">depth</text>
+            </svg>
+            <input type="number" id="capDepth" value="11.5" step="0.1" min="6" max="25" />
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Fit tuning</legend>
+          <label>
+            Thread clearance (diametral, mm)
+            <span class="hint">
+              Added to both diameters so the printed socket spins on
+              freely. 0.5 is print-validated at a 0.4&nbsp;mm nozzle. Print
+              the <strong>test coupon</strong> first: too tight → raise by
+              0.2; sloppy → lower by 0.2.
+            </span>
+            <input type="number" id="clearance" value="0.5" step="0.1" min="0" max="2" />
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Output</legend>
+          <label>
+            File format
+            <select id="format">
+              <option value="step" selected>STEP (.step) — CAD-friendly</option>
+              <option value="stl">STL (.stl) — print-ready</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <div class="actions">
+          <button type="button" id="generate" disabled>Loading kernel…</button>
+        </div>
+
+        <div id="status" class="status"></div>
+      </form>
+    </section>
+
+    <section class="output-section">
+      <h2>Preview</h2>
+      <p class="muted preview-hint">
+        Left click to rotate, right click to pan, scroll to zoom. The cap
+        floats above the nozzle; seated, it closes in a half turn.
+      </p>
+      <div class="preview-wrap">
+        <canvas id="preview" aria-label="3D preview"></canvas>
+        <div id="preview-overlay" class="preview-overlay">Generate to view</div>
+      </div>
+      <div class="preview-toggles">
+        <label class="toggle">
+          <input type="checkbox" id="show-nozzle" checked />
+          <span class="swatch swatch-body"></span> Nozzle
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="show-cap" checked />
+          <span class="swatch swatch-rail"></span> Cap
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="show-coupon" checked />
+          <span class="swatch"></span> Test coupon
+        </label>
+      </div>
+
+      <h2>Files</h2>
+      <p class="muted">Click a file to download.</p>
+      <ul id="downloads" class="downloads"></ul>
+
+      <h2>Printing</h2>
+      <ol class="instructions">
+        <li>Print the <strong>test coupon</strong> first (a few minutes of
+          plastic) and spin it onto the bottle. Adjust the thread clearance
+          and regenerate until it threads on snugly, then print the nozzle
+          and cap.</li>
+        <li>All parts print <strong>flat mouth face down</strong>, axis
+          vertical, <strong>no supports</strong>. PETG or PLA, 0.4&nbsp;mm
+          nozzle, 0.2&nbsp;mm layers, 3+ walls.</li>
+        <li>Enable your slicer's <strong>elephant-foot compensation</strong>
+          — the bottoms are deliberately square for bed adhesion, and thread
+          ridges reach the first layer.</li>
+        <li>The Ø0.8&nbsp;mm orifice prints tight at a 0.4&nbsp;mm nozzle —
+          clear it with a pin, or slice the nozzle at 0.2&nbsp;mm.</li>
+      </ol>
+
+      <div class="care">
+        <h3>Living with a printed glue nozzle</h3>
+        <ul>
+          <li><strong>Superglue sticks to 3D-printed parts</strong> (PLA and
+            PETG especially — the layer lines give it grip). Before first
+            use, coat the inside of the dispenser with a
+            <strong>dry lube</strong> (e.g. a PTFE spray like WD-40
+            Specialist Dry Lube) and let the solvent flash off for ~30
+            minutes. Cured clogs then pull out with a pin instead of
+            welding themselves in. Re-apply every few uses.</li>
+          <li><strong>When you're done gluing:</strong> turn the bottle
+            upright, squeeze air in and out a few times to push the glue in
+            the tip back down into the bottle, and wipe the tip with a
+            cloth to remove any residual glue — <em>then</em> screw the cap
+            back on. A clean, dry tip is what keeps the cap from gluing
+            itself shut.</li>
+          <li>Treat the nozzle as a consumable and print a spare or two —
+            or print it in PP filament, which cyanoacrylate barely bonds
+            to.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      <a href="https://github.com/gustebeast/superglue-cap" target="_blank" rel="noopener">Source on GitHub</a>
+      · Built with <a href="https://replicad.xyz" target="_blank" rel="noopener">replicad</a>
+      · Geometry shared with the CadQuery reference implementation in the repo
+    </p>
+  </footer>
+
+  <script type="module" src="main.js?v=1"></script>
+</body>
+</html>
