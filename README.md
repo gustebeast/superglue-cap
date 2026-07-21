@@ -103,5 +103,6 @@ loudly instead):
 
 ## License
 
-[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — models,
-code, and site.
+[CERN-OHL-S v2](https://cern-ohl.web.cern.ch/) (strongly reciprocal) —
+models, code, and site. Use, modify, and sell freely; distribute sources
+of derivatives under the same licence.
