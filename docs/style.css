@@ -300,3 +300,8 @@ footer a:hover { text-decoration: underline; }
 }
 .care h3 { margin-top: 0; }
 .care li { margin-bottom: 0.45rem; }
+
+/* Numeric input with a unit suffix */
+.input-row { display: flex; align-items: center; gap: 0.55rem; }
+.input-row input { flex: 1; min-width: 0; }
+.input-row .unit-suffix { color: var(--muted, #999); }
