@@ -94,8 +94,8 @@ def socket_cutter(spec, total_len, over_hi=_END_OVER, cone_ceiling=False,
     from the bore at z=total_len — the self-supporting ceiling for a nozzle
     printed mouth-down. over_hi is ignored in that case.
 
-    Built smooth-first (cyl + mouth cone + ceiling cone), thread cut LAST —
-    booleans on the finished helix are the slow/fragile ones.
+    Built smooth-first (cyl + optional mouth flare + ceiling cone), thread
+    cut LAST — booleans on the finished helix are the slow/fragile ones.
     """
     if turns is None:
         turns = spec.socket_turns
@@ -125,9 +125,9 @@ def build_socket_coupon(spec):
     """test_<name>_socket.step — open tube (no top), the real socket geometry
     at the spec's coupon turn count.
 
-    PRINT: mouth (chamfered end) DOWN on the bed, axis vertical, no supports.
-    The profile is asymmetric, so orientation matters: printed the other way
-    up, the 15° ridge tops become unprintable overhangs.
+    PRINT: flat mouth face DOWN (the top edge carries the chamfer), axis
+    vertical, no supports. The profile is asymmetric, so orientation matters:
+    printed the other way up, the 15° ridge tops become unprintable overhangs.
     """
     body = _cyl(spec.bore_d + 2 * SOCKET_WALL, spec.coupon_h)
     # Top-edge chamfer only, BEFORE the thread boolean (chamfer → cut). The

@@ -28,7 +28,6 @@ from .dimensions import (
     BOTTLES,
     CAP_THREAD_MINOR_D,
     COUNTER_Z,
-    LOCTITE,
     MACBEATH,
     NOZZLE_COLLAR_LEN,
     NOZZLE_COLLAR_MINOR_D,
@@ -59,8 +58,7 @@ X_LOCTITE = 48.0
 X_COUPON_MAC = -40.0
 X_COUPON_LOC = 92.0
 
-nozzle_macbeath = build_nozzle(MACBEATH)
-nozzle_loctite = build_nozzle(LOCTITE)
+nozzles = {b.name: build_nozzle(b) for b in BOTTLES}
 cap = build_cap()
 coupons = {b.name: build_socket_coupon(b) for b in BOTTLES}
 
@@ -68,41 +66,40 @@ coupons = {b.name: build_socket_coupon(b) for b in BOTTLES}
 # thread: each nozzle's bottle socket + collar, the cap's nut, each coupon.
 # Half-turn bands are short (~1-2 ridge crossings per angle), so ≥2
 # transitions is the gate — still catches all-solid / all-void no-ops.
-for _n, _spec in ((nozzle_macbeath, MACBEATH), (nozzle_loctite, LOCTITE)):
-    probe_socket_thread(_n, _spec, label=f"{_spec.name} nozzle socket")
-    probe_thread_band(_n, r=NOZZLE_COLLAR_MINOR_D / 2 + 0.15,
-                      z0=_spec.shoulder_z + 0.3,
-                      z1=_spec.shoulder_z + NOZZLE_COLLAR_LEN - 0.3,
-                      label=f"{_spec.name} collar", min_transitions=2)
-# The cap nut band is 6 mm against a 4 mm ridge period, and the mouth bevel
-# fades the lowest ridge — at some angles only a ridge EDGE lands in the
-# window (1 transition). The '#'-and-'.'-both-present check still catches a
-# no-op (smooth bore = all '.', wiped = all '#'), so 1 transition suffices.
-probe_thread_band(cap, r=CAP_THREAD_MINOR_D / 2 + 0.15,
-                  z0=0.5, z1=5.5, label="cap nut", min_transitions=1)
 for _b in BOTTLES:
+    probe_socket_thread(nozzles[_b.name], _b, label=f"{_b.name} nozzle socket")
+    probe_thread_band(nozzles[_b.name], r=NOZZLE_COLLAR_MINOR_D / 2 + 0.15,
+                      z0=_b.shoulder_z + 0.3,
+                      z1=_b.shoulder_z + NOZZLE_COLLAR_LEN - 0.3,
+                      label=f"{_b.name} collar", min_transitions=2)
     probe_socket_thread(coupons[_b.name], _b, turns=_b.coupon_turns,
                         label=f"{_b.name} coupon")
+# The cap nut band is 6 mm against a 4 mm ridge period, so at some angles
+# only a ridge EDGE lands in the window (1 transition). The '#'-and-'.'-
+# both-present check still catches a no-op (smooth bore = all '.', wiped =
+# all '#'), so 1 transition suffices.
+probe_thread_band(cap, r=CAP_THREAD_MINOR_D / 2 + 0.15,
+                  z0=0.5, z1=5.5, label="cap nut", min_transitions=1)
 
 # Map of part name → (workplane, output filename, optional note).
 PARTS = {
-    "nozzle_macbeath": (nozzle_macbeath, "nozzle_macbeath.step",
+    "nozzle_macbeath": (nozzles["macbeath"], "nozzle_macbeath.step",
                         "macbeath-bottle nozzle (socket print-validated) — "
-                        "print flat mouth DOWN, no supports; pin-clear the "
-                        "Ø0.8 orifice or slice at 0.2"),
-    "nozzle_loctite": (nozzle_loctite, "nozzle_loctite.step",
+                        "flat mouth DOWN, no supports; pin-clear the Ø0.8 "
+                        "orifice or slice at 0.2"),
+    "nozzle_loctite": (nozzles["loctite"], "nozzle_loctite.step",
                        "loctite-bottle nozzle (socket fit PENDING — print "
-                       "its coupon first) — print mouth DOWN, no supports"),
+                       "its coupon first) — flat mouth DOWN, no supports"),
     "cap": (cap, "cap.step",
             "shared half-turn cap, fits both nozzles; mouth rim lands flat "
-            "on the shoulder, tip seals into the 45° pocket — print mouth "
+            "on the shoulder, tip seals into the 45° pocket — flat mouth "
             "DOWN, no supports"),
     "macbeath_coupon": (coupons["macbeath"], "test_macbeath_socket.step",
                         "thread-fit coupon (VALIDATED: fits the bottle) — "
-                        "print mouth DOWN, axis vertical, no supports"),
+                        "flat mouth DOWN, no supports"),
     "loctite_coupon": (coupons["loctite"], "test_loctite_socket.step",
-                       "thread-fit coupon (fit PENDING) — print mouth DOWN, "
-                       "axis vertical, no supports"),
+                       "thread-fit coupon (fit PENDING) — flat mouth DOWN, "
+                       "no supports"),
 }
 
 
@@ -117,9 +114,9 @@ def collect_components():
     """Placed parts at as-built (SEATED) positions for tools/check_overlaps.py
     — the cap screwed home on the macbeath collar, where its designed contact
     (thread flanks + the preloaded tip seal) is a whitelisted pair."""
-    return [("nozzle_macbeath", nozzle_macbeath),
+    return [("nozzle_macbeath", nozzles["macbeath"]),
             ("cap", cap.translate((0, 0, MACBEATH.shoulder_z))),
-            ("nozzle_loctite", nozzle_loctite.translate((X_LOCTITE, 0, 0))),
+            ("nozzle_loctite", nozzles["loctite"].translate((X_LOCTITE, 0, 0))),
             ("macbeath_coupon", coupons["macbeath"].translate((X_COUPON_MAC, 0, 0))),
             ("loctite_coupon", coupons["loctite"].translate((X_COUPON_LOC, 0, 0)))]
 
@@ -154,13 +151,13 @@ def _export_assembly():
     build_n = _bump_build_counter()
     assembly = (
         cq.Assembly(name="superglue_cap")
-        .add(nozzle_macbeath, name="nozzle_macbeath",
+        .add(nozzles["macbeath"], name="nozzle_macbeath",
              color=color(COLOR["nozzle_macbeath"]))
         # Cap floated above the macbeath tip so the collar + pocket stay visible.
         .add(cap.translate((0, 0, MACBEATH.tip_z + 10.0)), name="cap",
              color=color(COLOR["cap"]))
-        .add(nozzle_loctite.translate((X_LOCTITE, 0, 0)), name="nozzle_loctite",
-             color=color(COLOR["nozzle_loctite"]))
+        .add(nozzles["loctite"].translate((X_LOCTITE, 0, 0)),
+             name="nozzle_loctite", color=color(COLOR["nozzle_loctite"]))
         # Fit coupons, kept off to the side per the coupon rule.
         .add(coupons["macbeath"].translate((X_COUPON_MAC, 0, 0)),
              name="macbeath_coupon", color=color(COLOR["macbeath_coupon"]))
