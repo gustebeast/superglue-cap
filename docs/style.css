@@ -301,7 +301,20 @@ footer a:hover { text-decoration: underline; }
 .care h3 { margin-top: 0; }
 .care li { margin-bottom: 0.45rem; }
 
-/* Numeric input with a unit suffix */
-.input-row { display: flex; align-items: center; gap: 0.55rem; }
-.input-row input { flex: 1; min-width: 0; }
-.input-row .unit-suffix { color: var(--muted, #999); }
+/* Numeric input with the unit shown faintly inside the field */
+.input-row { position: relative; display: block; }
+.input-row input[type="number"] {
+  padding-right: 3.2rem;   /* keep typed digits clear of the suffix */
+  box-sizing: border-box;
+}
+.input-row .unit-suffix {
+  position: absolute;
+  right: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted, #999);
+  opacity: 0.55;
+  font-size: 0.9rem;
+  pointer-events: none;    /* clicks fall through to the input */
+  user-select: none;
+}
