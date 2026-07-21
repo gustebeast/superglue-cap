@@ -33,7 +33,7 @@ just using the web generator below with your own measurements.
 [pantorouter template generator](https://github.com/gustebeast/pantorouter-template-generator)):
 measure your bottle's thread with calipers — the page has diagrams for each
 measurement — hit Generate, and download STEP/STL for a nozzle, cap, and
-test coupon matched to your bottle. All geometry is built locally in the
+thread-fit test piece matched to your bottle. All geometry is built locally in the
 browser via [replicad](https://replicad.xyz); nothing is uploaded. The JS
 geometry mirrors `src/` constant-for-constant — keep them in sync.
 
