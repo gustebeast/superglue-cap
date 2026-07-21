@@ -22,8 +22,8 @@ The collar valleys run out downward as a shallow helical notch in the
 shoulder's inner rim (r ≤ 6.5) — cosmetic, fully covered by the cap, and
 inside the cap's Ø13 mouth ring so the flat contact area stays intact.
 
-PRINT: mouth (chamfered end) DOWN on the bed, axis vertical, no supports.
-The Ø0.8 orifice prints on the small side at a 0.4 nozzle; clear it with a
+PRINT: flat mouth face DOWN on the bed, axis vertical, no supports. The
+Ø0.8 orifice prints on the small side at a 0.4 nozzle; clear it with a
 pin, or slice with the 0.2 nozzle for a crisp hole.
 """
 

@@ -17,8 +17,8 @@ and therefore the shoulder height, differs):
 The female socket uses the project-local ASYMMETRIC (buttress) profile —
 45° ridge underside (self-supporting, mouth-down print), gentle up-facing
 top flank — because a symmetric 45° thread can't reach these depth/pitch
-ratios (see src/thread_socket.py). The nozzle↔cap joint is the cadkit
-quarter-turn multistart thread.
+ratios (see src/thread_socket.py). The nozzle↔cap joint is a cadkit
+multistart thread that seals in a HALF TURN.
 
 Printer: Bambu, 0.4 mm nozzle (0.2 available), axis vertical, no supports.
 """
@@ -62,7 +62,6 @@ class BottleSpec:
         # slope)) — starting lower adds no floor material, higher gives some
         # up. The 0.25 margin also keeps the sweep's start face clear of the
         # cutter blank's bottom (a near-coincident face grazes).
-        import math
         wall_depth = (self.bore_d - self.ridge_tip_d) / 2
         return -(RIDGE_TIP_FLAT / 2
                  + wall_depth * math.tan(math.radians(RIDGE_TOP_SLOPE_DEG))
@@ -72,7 +71,6 @@ class BottleSpec:
     def top_rise(self):
         # How far the LAST ridge's up-facing flank extends ABOVE the helix
         # top, at the bore wall.
-        import math
         return (RIDGE_TIP_FLAT / 2
                 + (self.bore_d / 2 + SOCKET_VALLEY_OVERSHOOT - self.ridge_tip_d / 2)
                 * math.tan(math.radians(RIDGE_TOP_SLOPE_DEG)))
@@ -136,9 +134,14 @@ DISPENSER_H        = 34.5                # shoulder → tip
 NOZZLE_CONE_BASE_D = 10.0                # exterior cone base (clears Ø11 ridges)
 NOZZLE_TIP_OD      = 2.4                 # flat tip rim — 0.8 wall at the orifice
 NOZZLE_ORIFICE_D   = 0.8                 # minimum inner Ø, at the tip face
-_INT_R_AT = lambda dz: (NOZZLE_THROAT_D / 2
-                        - (NOZZLE_THROAT_D - NOZZLE_ORIFICE_D) / 2
-                        * dz / DISPENSER_H)
+
+
+def _INT_R_AT(dz):
+    """Internal-cone radius at height dz above the shoulder plane."""
+    return (NOZZLE_THROAT_D / 2
+            - (NOZZLE_THROAT_D - NOZZLE_ORIFICE_D) / 2 * dz / DISPENSER_H)
+
+
 assert NOZZLE_COLLAR_MINOR_D / 2 - _INT_R_AT(0.0) >= 1.2, \
     "collar wall too thin over the internal cone — shrink NOZZLE_THROAT_D"
 assert NOZZLE_CONE_BASE_D / 2 - _INT_R_AT(NOZZLE_COLLAR_LEN) >= 1.2, \

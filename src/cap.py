@@ -11,12 +11,12 @@ tracking the nozzle cone all the way up) → a top cone closing over the seal
 pocket with CAP_WALL of solid at the centreline. Grip ribs sit on the boss
 only — the shell cone stays clean.
 
-Interior (unchanged from the solid version): nut thread (nominal Ø13/Ø11
-quarter-turn cutter — clearance lives on the male collar), 45° neck-down,
-cavity hugging the cone at CAP_CONE_CLR per side, then the 45° seal pocket
-(now with a small Ø1.4 flat ceiling — a trivial bridge — instead of a needle
-apex, buying roof margin). CAP_SEAL_PRELOAD (0.15) keeps the tip pressed
-into the pocket while the mouth rim closes flat on the shoulder.
+Interior: nut thread (the nominal Ø13/Ø11 half-turn cutter — clearance
+lives on the male collar), 45° neck-down, cavity hugging the cone at
+CAP_CONE_CLR per side, then the 45° seal pocket, whose small Ø1.4 flat
+ceiling (a trivial bridge) buys roof margin over a needle apex.
+CAP_SEAL_PRELOAD keeps the tip pressed into the pocket while the mouth rim
+closes flat on the shoulder — thread torque loads both contacts.
 
 All down-facing interior surfaces are ≥45°; every exterior surface faces up.
 PRINT: mouth DOWN, axis vertical, no supports.
@@ -48,8 +48,9 @@ from .grip import add_grip_ribs
 from .thread_socket import _cone
 
 # ── Interior stack (cap coords: nozzle z minus the spec's shoulder_z) ────────
-NUT_Z0 = -0.5                                          # cutter overshoots the mouth
-NECK_Z0 = NUT_Z0 + CAP_NUT_H + 0.5                     # 6.0 — top of the nut band
+NUT_OVER = 0.5                                         # cutter overshoot past the mouth
+NUT_Z0 = -NUT_OVER
+NECK_Z0 = CAP_NUT_H                                    # 6.0 — top of the nut band
 CAVITY_D0 = NOZZLE_CONE_BASE_D + 2 * CAP_CONE_CLR      # 11.0 cavity over the cone base
 NECK_H = (CAP_THREAD_MAJOR_D - CAVITY_D0) / 2.0        # 1.0 — 45° neck-down
 CAVITY_Z0 = NECK_Z0 + NECK_H                           # 7.0
@@ -83,13 +84,20 @@ assert BOSS_TOP < JOIN_Z < POCKET_Z0, "boss taper misses the shell cone"
 assert SHELL_END_R > TOP_FLAT_R, "top cone inverted"
 
 # The cavity taper must clear the dispensing cone all the way up.
-_cone_d_at = lambda zc: (NOZZLE_CONE_BASE_D
-                         - (NOZZLE_CONE_BASE_D - NOZZLE_TIP_OD)
-                         * (zc - NOZZLE_COLLAR_LEN)
-                         / (DISPENSER_H - NOZZLE_COLLAR_LEN))
-_cavity_d_at = lambda zc: (CAVITY_D0
-                           - (CAVITY_D0 - POCKET_D0) * (zc - CAVITY_Z0)
-                           / (POCKET_Z0 - CAVITY_Z0))
+def _cone_d_at(zc):
+    """Nozzle dispensing-cone Ø at cap height zc (seated)."""
+    return (NOZZLE_CONE_BASE_D
+            - (NOZZLE_CONE_BASE_D - NOZZLE_TIP_OD)
+            * (zc - NOZZLE_COLLAR_LEN) / (DISPENSER_H - NOZZLE_COLLAR_LEN))
+
+
+def _cavity_d_at(zc):
+    """Cap cavity Ø at cap height zc."""
+    return (CAVITY_D0
+            - (CAVITY_D0 - POCKET_D0) * (zc - CAVITY_Z0)
+            / (POCKET_Z0 - CAVITY_Z0))
+
+
 for _zc in (CAVITY_Z0, 15.0, 25.0, POCKET_Z0):
     assert _cavity_d_at(_zc) > _cone_d_at(_zc) + 0.5, \
         f"cap cavity pinches the dispensing cone at z={_zc}"
@@ -118,5 +126,5 @@ def build_cap():
     # FDM practice anyway; the male's own run-in does the aligning).
     nut = multistart_rod(CAP_THREAD_MINOR_D, CAP_THREAD_MAJOR_D,
                          CAP_THREAD_SPACING, CAP_THREAD_STARTS,
-                         CAP_NUT_H + 0.5, z=NUT_Z0, bevel=0)
+                         CAP_NUT_H + NUT_OVER, z=NUT_Z0, bevel=0)
     return body.cut(nut, clean=False)
