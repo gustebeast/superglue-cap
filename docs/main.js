@@ -481,7 +481,7 @@ async function generateAll() {
     const spec = deriveSpec(readParams());
     const format = $("format").value === "stl" ? "stl" : "step";
     const parts = [
-      ["coupon", "superglue-test-coupon", () => buildCoupon(spec), 0x6b8aab,
+      ["coupon", "superglue-thread-fit-test", () => buildCoupon(spec), 0x6b8aab,
        [spec.skirtOD + 18, 0, 0]],
       ["nozzle", "superglue-nozzle", () => buildNozzle(spec), 0xe0973c,
        [0, 0, 0]],
@@ -502,7 +502,7 @@ async function generateAll() {
     setStatus(
       `Done. Socket: Ø${spec.bore.toFixed(1)} bore / Ø${spec.tip.toFixed(1)} ` +
       `ridge tips, ${spec.turns} turns at ${spec.pitch} mm pitch. ` +
-      `Nozzle ${spec.tipZ.toFixed(1)} mm tall. Print the coupon first!`,
+      `Nozzle ${spec.tipZ.toFixed(1)} mm tall. Print the thread fit test first!`,
       "ok"
     );
   } catch (e) {
