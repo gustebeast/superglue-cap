@@ -6,7 +6,7 @@ Run from the repo root:
   py -3.12 -m src.build --list       # list available part names
 
 Writes one STEP per printed part plus a coloured assembly.step that the
-shared FreeCAD viewer hub opens (floating 3-D build number included).
+web viewer (cadkit.web) shows (floating 3-D build number included).
 
 TWO bottle variants (see src/dimensions.py): nozzle_macbeath (socket
 print-validated) and nozzle_loctite (print-fit pending — its coupon is
@@ -20,7 +20,7 @@ import sys
 import cadquery as cq
 
 from cadkit.cq_colors import color
-from cadkit.freecad import show
+from cadkit.web import show
 from cadkit.step_export import export_print
 from cadkit.orientation import (PrintOrientation as PO,
                                 require_declared, unconfirmed)

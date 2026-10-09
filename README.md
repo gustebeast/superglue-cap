@@ -66,13 +66,13 @@ channel makes cured clogs removable.
 Requires Python 3.10–3.12 with `cadquery` installed.
 
 ```
-py -3.12 -m src.build              # all STEPs + assembly.step (+ FreeCAD viewer)
+py -3.12 -m src.build              # all STEPs + assembly.step (+ the web viewer)
 py -3.12 -m src.build --list      # part names
 py -3.12 -m src.build --part cap  # one part
 py -3.12 -m tools.check_overlaps  # collision gate (0 = clean)
 ```
 
-`View Assembly.cmd` opens the last-built assembly in FreeCAD (Windows).
+`View Assembly.cmd` opens the last-built assembly in the web viewer (Windows).
 
 ## Layout
 
