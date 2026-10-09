@@ -21,7 +21,9 @@ import cadquery as cq
 
 from cadkit.cq_colors import color
 from cadkit.freecad import show
-from cadkit.step_export import export_step
+from cadkit.step_export import export_print
+from cadkit.orientation import (PrintOrientation as PO,
+                                require_declared, unconfirmed)
 
 from .cap import build_cap
 from .dimensions import (
@@ -102,10 +104,40 @@ PARTS = {
                        "no supports"),
 }
 
+# ── PRINT ORIENTATION — each printed part's bed face, declared once, where
+# cadkit's export can read it (cadkit/AGENTS.md; the contract exists because
+# a MISSING declaration used to look exactly like a deliberate "models as
+# printed", and a part on another project shipped standing on its end).
+#
+# Nothing new is being decided here: every part's note above already said
+# FLAT MOUTH DOWN, NO SUPPORTS, and every part is modelled that way — the
+# flat mouth at z = 0, the part growing up off it. So all five are `None`,
+# "models as printed". cadkit.tools.suggest_orientation independently ranks
+# None first for all five.
+#
+# CONFIRMED: this is the geometry's own orientation, not an assumption — the
+# mouth is the one large flat face, the 45° seal pocket is cut to be
+# self-supporting from it, and the macbeath socket has been printed and fits.
+# (The loctite FIT is still pending; that is a thread-size question, not an
+# orientation one, and it does not make the bed face a guess.)
+_MOUTH_DOWN = "flat mouth DOWN on the bed, no supports — the mouth is the "              "one large flat face and the 45 deg seal geometry is cut to "              "be self-supporting from it"
+PRINT_ORIENTATION = {
+    "nozzle_macbeath": PO(None, _MOUTH_DOWN + "; socket print-validated"),
+    "nozzle_loctite":  PO(None, _MOUTH_DOWN),
+    "cap":             PO(None, _MOUTH_DOWN + "; the rim lands flat on the "
+                                "shoulder and the tip seals into the 45 deg "
+                                "pocket, both printed from this face"),
+    "macbeath_coupon": PO(None, _MOUTH_DOWN + "; a coupon prints on the same "
+                                "face as the part it stands in for, or it "
+                                "tests a print nobody makes"),
+    "loctite_coupon":  PO(None, _MOUTH_DOWN + "; same face as its part"),
+}
+require_declared(set(PARTS), PRINT_ORIENTATION)
+
 
 def _export(name):
     obj, path, note = PARTS[name]
-    export_step(obj, str(OUT / path))
+    export_print(obj, PRINT_ORIENTATION[name], str(OUT / path))
     suffix = f"  ({note})" if note else ""
     print(f"Wrote {path}{suffix}")
 
@@ -178,6 +210,14 @@ def main() -> None:
     p.add_argument("--part", help="Build only this part (skips assembly).")
     p.add_argument("--list", action="store_true", help="List part names and exit.")
     args = p.parse_args()
+
+    # 🚩 an UNCONFIRMED bed face is a guess nobody has checked — and the bed
+    # face decides which faces are overhangs, so work done on top of a guess
+    # can be silently wrong. Say so on every build (cadkit AGENTS.md).
+    flagged = unconfirmed(PRINT_ORIENTATION)
+    if flagged:
+        print("UNCONFIRMED print orientation (confirm with the user BEFORE "
+              "working on these parts): " + ", ".join(flagged), flush=True)
 
     if args.list:
         print("assembly")
