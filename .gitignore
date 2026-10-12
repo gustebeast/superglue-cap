@@ -4,6 +4,6 @@ __pycache__/
 .venv/
 .vscode/
 
-# Per-machine build counter (drives the floating "build #N" model) — bumped
+# Per-machine build counter (the "build #N" the viewer page states) — bumped
 # every build, so don't track it.
 tools/build_counter.txt

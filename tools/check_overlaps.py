@@ -25,8 +25,6 @@ INTENDED: set[frozenset[str]] = {frozenset({"nozzle_macbeath", "cap"})}
 
 
 def intended(na, nb) -> bool:
-    if "build_counter" in (na, nb):
-        return True
     return frozenset({na, nb}) in INTENDED
 
 

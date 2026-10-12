@@ -167,9 +167,6 @@ GRIP_RIB_Z0 = 0.0                        # ribs start ON the bed: extra first-la
 NOZZLE_RIB_N = 20                        # around the skirt
 CAP_RIB_N    = 16                        # around the thread boss
 
-# ── Assembly viz ─────────────────────────────────────────────────────────────
-COUNTER_Z = 115.0                        # build number float height
-
 # ── Per-variant invariants ───────────────────────────────────────────────────
 for _b in BOTTLES:
     assert _b.ridge_tip_d < _b.bore_d, f"{_b.name}: thread height must be positive"

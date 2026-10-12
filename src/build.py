@@ -5,8 +5,8 @@ Run from the repo root:
   py -3.12 -m src.build --part NAME  # build only one part
   py -3.12 -m src.build --list       # list available part names
 
-Writes one STEP per printed part plus a coloured assembly.step that the
-web viewer (cadkit.web) shows (floating 3-D build number included).
+Writes one STEP per printed part and hands a coloured assembly straight to
+the web viewer (cadkit.web), whose page states the build number.
 
 TWO bottle variants (see src/dimensions.py): nozzle_macbeath (socket
 print-validated) and nozzle_loctite (print-fit pending — its coupon is
@@ -29,7 +29,6 @@ from .cap import build_cap
 from .dimensions import (
     BOTTLES,
     CAP_THREAD_MINOR_D,
-    COUNTER_Z,
     MACBEATH,
     NOZZLE_COLLAR_LEN,
     NOZZLE_COLLAR_MINOR_D,
@@ -51,7 +50,6 @@ COLOR = {
     "cap":             "#6FAE54",   # leaf green — shared sealing cap
     "macbeath_coupon": "#6B8AAB",   # slate blue — test pieces
     "loctite_coupon":  "#8FA8C0",   # lighter slate
-    "build_counter":   "#F0A878",   # salmon accent
 }
 
 # Assembly / overlap-gate layout (x offsets; cap seats on the macbeath nozzle
@@ -153,7 +151,7 @@ def collect_components():
             ("loctite_coupon", coupons["loctite"].translate((X_COUPON_LOC, 0, 0)))]
 
 
-# ── Build counter — floating 3-D number, bumped every full build ─────────────
+# ── Build counter — bumped every full build, shown on the viewer page ────────
 _COUNTER = pathlib.Path(__file__).resolve().parent.parent / "tools" / "build_counter.txt"
 
 
@@ -168,15 +166,6 @@ def _bump_build_counter() -> int:
     except OSError:
         pass
     return n
-
-
-def _build_counter_model(n: int):
-    """Upright number floating above the parts. None if the text engine
-    hiccups — a font failure must never break the build."""
-    try:
-        return cq.Workplane("XZ").center(0, COUNTER_Z).text(str(n), 10, 2)
-    except Exception:
-        return None
 
 
 def _export_assembly():
@@ -196,12 +185,8 @@ def _export_assembly():
         .add(coupons["loctite"].translate((X_COUPON_LOC, 0, 0)),
              name="loctite_coupon", color=color(COLOR["loctite_coupon"]))
     )
-    counter = _build_counter_model(build_n)
-    if counter is not None:
-        assembly.add(counter, name="build_counter", color=color(COLOR["build_counter"]))
-    assembly.save(str(OUT / "assembly.step"), mode="default")
-    print(f"Wrote assembly.step  [build #{build_n}]", flush=True)
-    show(str(OUT / "assembly.step"))
+    print(f"Assembly: {len(assembly.children)} parts  [build #{build_n}]", flush=True)
+    show(assembly, root=OUT, build=build_n)
 
 
 def main() -> None:
